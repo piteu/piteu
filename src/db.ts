@@ -16,7 +16,7 @@ let dbPromise: Promise<IDBPDatabase> | null = null;
 
 function db() {
   if (!dbPromise) {
-    dbPromise = openDB('piteu', 1, {
+    dbPromise = openDB('bruna', 1, {
       upgrade(d) {
         d.createObjectStore('meta');
         const s = d.createObjectStore('entries', { keyPath: 'id' });
@@ -84,7 +84,7 @@ export async function wipeAll(): Promise<void> {
 // ---------- Backups ----------
 
 export interface Backup {
-  app: 'piteu';
+  app: 'bruna';
   version: 1;
   exportedAt: number;
   keyring: Keyring;
@@ -95,7 +95,7 @@ export async function makeBackup(): Promise<Backup> {
   const d = await db();
   const keyring = await getKeyring();
   if (!keyring) throw new Error('No data yet');
-  return { app: 'piteu', version: 1, exportedAt: Date.now(), keyring, entries: await d.getAll('entries') };
+  return { app: 'bruna', version: 1, exportedAt: Date.now(), keyring, entries: await d.getAll('entries') };
 }
 
 /**
@@ -103,7 +103,7 @@ export async function makeBackup(): Promise<Backup> {
  * Returns the number of entries imported, or null if the passphrase was wrong.
  */
 export async function restoreBackup(key: CryptoKey, backup: Backup, passphrase?: string): Promise<number | null> {
-  if (backup.app !== 'piteu' || backup.version !== 1) throw new Error('This is not a Piteu backup file.');
+  if (backup.app !== 'bruna' || backup.version !== 1) throw new Error('This is not a Bruna backup file.');
   const backupKey = await openKeyring(backup.keyring, passphrase);
   if (!backupKey) return null;
   let n = 0;

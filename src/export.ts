@@ -21,7 +21,7 @@ export const moodFace = (m?: number) => MOODS.find((x) => x.value === m)?.face ?
 
 /** The things you actually wrote in an entry (not mood taps or chip choices). */
 export function writtenTexts(e: Entry): string[] {
-  if (e.notes) return e.notes;
+  if (e.notes) return [...(e.details ?? []).map((d) => d.text), ...e.notes];
   // Older entries: work it out from the conversation.
   const tapped = new Set([e.feelings?.join(', '), e.topics?.join(', ')]);
   const moodLabels = new Set(MOODS.map((m) => `${m.face} ${m.label}`));
@@ -31,7 +31,7 @@ export function writtenTexts(e: Entry): string[] {
 }
 
 export function toMarkdown(entries: Entry[]): string {
-  const lines = ['# My Piteu journal', ''];
+  const lines = ['# My Bruna journal', ''];
   const sorted = [...entries].sort((a, b) => entryTime(a) - entryTime(b));
   let lastDay = '';
   for (const e of sorted) {
@@ -42,6 +42,7 @@ export function toMarkdown(entries: Entry[]): string {
     }
     lines.push(`### ${formatTime(e.createdAt)} · ${e.flowTitle} ${moodFace(e.mood)}`.trimEnd(), '');
     if (e.activities?.length) lines.push(`**Did:** ${e.activities.join(', ')}  `);
+    for (const d of e.details ?? []) lines.push(`- *${d.item}:* ${d.text.replace(/\n+/g, ' ')}`);
     if (e.people?.length) lines.push(`**With:** ${e.people.join(', ')}  `);
     if (e.activities?.length || e.people?.length) lines.push('');
     for (const m of e.messages) {
@@ -71,11 +72,11 @@ export function reminderIcs(hour: number, minute: number, url: string, now = new
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute);
   const local = `${start.getFullYear()}${pad(start.getMonth() + 1)}${pad(start.getDate())}T${pad(hour)}${pad(minute)}00`;
   const stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
-  const uid = `piteu-reminder-${hour}${pad(minute)}@piteu.local`;
+  const uid = `bruna-reminder-${hour}${pad(minute)}@bruna.local`;
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Piteu//Daily reminder//EN',
+    'PRODID:-//Bruna//Daily reminder//EN',
     'CALSCALE:GREGORIAN',
     'BEGIN:VEVENT',
     `UID:${uid}`,
@@ -83,13 +84,13 @@ export function reminderIcs(hour: number, minute: number, url: string, now = new
     `DTSTART:${local}`, // floating time: always this time of day, wherever you are
     'DURATION:PT5M',
     'RRULE:FREQ=DAILY',
-    'SUMMARY:Piteu: what did you do today?',
-    'DESCRIPTION:Take a minute to log your day in Piteu.',
+    'SUMMARY:Bruna: what did you do today?',
+    'DESCRIPTION:Take a minute to log your day in Bruna.',
     `URL:${url}`,
     'TRANSP:TRANSPARENT',
     'BEGIN:VALARM',
     'ACTION:DISPLAY',
-    'DESCRIPTION:What did you do today? Log it in Piteu.',
+    'DESCRIPTION:What did you do today? Log it in Bruna.',
     'TRIGGER:PT0M',
     'END:VALARM',
     'END:VEVENT',

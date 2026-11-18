@@ -68,6 +68,9 @@ export interface Day {
   moods: number[];
   activities: string[];
   people: string[];
+  /** Answers about specific activities/people. */
+  details: { item: string; text: string }[];
+  /** Other things you wrote. */
   notes: string[];
 }
 
@@ -80,7 +83,8 @@ export function dayDetails(entries: Entry[], ts: number): Day {
     moods: es.filter((e) => e.mood).map((e) => e.mood!),
     activities: [...new Set(es.flatMap((e) => e.activities ?? []))],
     people: [...new Set(es.flatMap(people))],
-    notes: es.flatMap(writtenTexts),
+    details: es.flatMap((e) => e.details ?? []),
+    notes: es.flatMap((e) => e.notes ?? writtenTexts(e)),
   };
 }
 

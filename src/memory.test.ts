@@ -74,7 +74,7 @@ describe('memory', () => {
   });
 
   it('makes a valid daily reminder', () => {
-    const ics = reminderIcs(21, 5, 'https://example.org/piteu/', NOW);
+    const ics = reminderIcs(21, 5, 'https://example.org/bruna/', NOW);
     expect(ics).toContain('DTSTART:20261118T210500');
     expect(ics).toContain('RRULE:FREQ=DAILY');
     expect(ics.split('\r\n')[0]).toBe('BEGIN:VCALENDAR');

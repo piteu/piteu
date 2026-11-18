@@ -29,7 +29,7 @@ export default function Setup({ onDone }: { onDone: (key: CryptoKey) => void }) 
     return (
       <div className="page narrow setup">
         <div className="logo" aria-hidden>💬</div>
-        <h1>Hi, I’m Piteu.</h1>
+        <h1>Hi, I’m Bruna.</h1>
         <p>
           A private journal that works like a chat. I’ll ask you short questions — you can tap, write a few words, or
           skip. No essays needed.

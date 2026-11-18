@@ -31,7 +31,9 @@ export type Step =
   | { kind: 'say'; text: T; when?: When }
   | { kind: 'mood'; id: string; text: T; when?: When }
   | { kind: 'choice'; id: string; text: T; options: L; multi?: boolean; other?: string; when?: When }
-  | { kind: 'write'; id: string; text: T; starters?: L; easier?: T; nudge?: T; when?: When };
+  | { kind: 'write'; id: string; text: T; starters?: L; easier?: T; nudge?: T; when?: When }
+  /** Specific questions about the activities and people you just tapped (see details.ts). */
+  | { kind: 'followups'; max: number; when?: When };
 
 export interface Flow {
   id: string;
@@ -186,6 +188,7 @@ const evening: Flow = {
   steps: [
     { kind: 'mood', id: 'mood', text: 'How was today, overall?' },
     ...activitySteps,
+    { kind: 'followups', max: 2 },
     {
       kind: 'write', id: 'title',
       text: 'If today had a title, what would it be?',
@@ -356,9 +359,11 @@ const log: Flow = {
   steps: [
     { kind: 'choice', id: 'day', text: 'Which day is this about?', options: ['Today', 'Yesterday', '2 days ago'], when: (c) => !c.answers.day },
     ...activitySteps,
+    { kind: 'followups', max: 3 },
     {
       kind: 'write', id: 'details',
-      text: 'What’s one thing you’d like to remember? What you ate, what you talked about, something funny…',
+      when: (c) => !c.answers.followups, // only if there were no specific questions
+      text: 'Anything you’d like to remember about it? What you ate, what you talked about, something funny…',
       starters: ['I want to remember…', 'We talked about…', 'The funniest part was…', 'I ate…'],
       easier: (c) => `Let’s walk through it. What’s the first thing you remember doing ${dayWord(c)}?`,
       nudge: 'Where were you, and what happened next?',

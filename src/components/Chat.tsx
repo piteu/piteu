@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { type AnswerValue, type Session, answer, displayAnswer, start } from '../engine';
+import { type AnswerValue, type Session, answer, displayAnswer, skipFollowups, start } from '../engine';
+import { daySummary } from '../details';
 import { type Answers, FLOWS, MOODS, NO_ONE, flowById, suggestedFlowId } from '../flows';
 import { listEntries, saveEntry } from '../db';
 import { known, yesterdayMissing } from '../memory';
@@ -77,14 +78,37 @@ export default function Chat({ dataKey, settings, active }: { dataKey: CryptoKey
   function reply(s: Session, base: Message[], meta: NonNullable<typeof entryMeta>, value: AnswerValue) {
     const p = s.current!;
     const shown = displayAnswer(p, value);
-    const out = answer(s, value, opts);
-    const next = [...base, ...(shown ? [msg('me', shown)] : []), ...out.said.map((t) => msg('app', t))];
-    if (out.session.done) next.push(msg('app', 'Anything else? You can start another below, or come back any time.'));
+    finish(answer(s, value, opts), [...base, ...(shown ? [msg('me', shown)] : [])], meta);
+  }
+
+  function finish(out: ReturnType<typeof answer>, base: Message[], meta: NonNullable<typeof entryMeta>) {
+    const next = [...base, ...out.said.map((t) => msg('app', t))];
+    if (out.session.done) {
+      const summary = daySummary(factsOf(out.session));
+      if (summary) {
+        next.push(msg('app', 'Here’s your day in a few lines — handy if you want to tell someone. You’ll find it again in Memory.'));
+        next.push(msg('app', summary));
+      }
+      next.push(msg('app', 'Anything else? You can start another below, or come back any time.'));
+    }
     setSession(out.session);
     setMsgs(next);
     setText('');
     resetInputs();
     persist(out.session, next.slice(meta.from), meta);
+  }
+
+  function factsOf(s: Session) {
+    const a = s.answers;
+    const list = (v: unknown) => (Array.isArray(v) ? (v as string[]) : []);
+    return {
+      activities: list(a.activities),
+      people: list(a.people).filter((x) => x !== NO_ONE),
+      details: Object.entries(a)
+        .filter(([k, v]) => k.startsWith('about:') && typeof v === 'string' && v.trim())
+        .map(([k, v]) => ({ item: k.slice(6), text: v as string })),
+      mood: typeof a.mood === 'number' ? a.mood : undefined,
+    };
   }
 
   async function persist(s: Session, messages: Message[], meta: NonNullable<typeof entryMeta>) {
@@ -115,6 +139,7 @@ export default function Chat({ dataKey, settings, active }: { dataKey: CryptoKey
       activities: list(a.activities),
       people: list((list(a.people) ?? []).filter((x) => x !== NO_ONE)),
       notes,
+      details: factsOf(s).details,
       aboutAt,
       // Drop the closing "Anything else?" line from the saved entry.
       messages: messages.filter((m) => !(m.from === 'app' && m.text.startsWith('Anything else?'))),
@@ -308,6 +333,17 @@ export default function Chat({ dataKey, settings, active }: { dataKey: CryptoKey
             {!(current.kind === 'choice' && current.multi) && (
               <button className="link small" onClick={() => send(null)}>
                 Skip
+              </button>
+            )}
+            {current.about && (
+              <button
+                className="link small"
+                onClick={() => {
+                  if (!session || !entryMeta) return;
+                  finish(skipFollowups(session, opts), msgs, entryMeta);
+                }}
+              >
+                No more questions
               </button>
             )}
             <button className="link small" onClick={stop}>

@@ -1,6 +1,6 @@
-# Piteu — a private journal that feels like a chat
+# Bruna — a private journal that feels like a chat
 
-Piteu asks you short, kind questions and you answer by tapping, writing a few words, or skipping.
+Bruna asks you short, kind questions and you answer by tapping, writing a few words, or skipping.
 It's built for people who find writing hard.
 
 ## How it helps you write
@@ -11,10 +11,12 @@ It's built for people who find writing hard.
 - **One gentle nudge.** After a very short answer it may ask for a bit more, at most once per check-in. You can turn this off.
 - **Six check-ins:** Quick check-in (1 min), What I did, End of day, Something's on my mind (untangle a worry), Three good things, and Just write (with a daily prompt).
 
-The questions live in [`src/flows.ts`](src/flows.ts). They're plain text, easy to change or add to.
+The questions live in [`src/flows.ts`](src/flows.ts) and the follow-ups in [`src/details.ts`](src/details.ts). They're plain text, easy to change or add to.
 
 ## Remembering what you did, and when
-- **What I did** check-in: tap what you did and who you saw, then optionally add one detail. Your own activities and people become one-tap options.
+- **What I did** check-in: tap what you did and who you saw. Your own activities and people become one-tap options.
+- **Specific follow-up questions** about up to three of the things you tapped, e.g. "You went for a walk — where did you go?", "What did you and Rita talk about?", "What was the appointment for? What did they say?" (End of day asks about two.) "No more questions" stops them at any time.
+- **Tell someone about my day**: your answers become a few plain sentences ("Went for a walk: along the river. Saw Rita: she told me about her new job.") you can read out, copy or share. Shown at the end of the check-in and on every day in Memory.
 - **Fill in yesterday**: if a day wasn't logged, the app offers to catch up the next morning, and the entry is filed under the right day.
 - **Memory tab**:
   - *Calendar*: tap any day to see what you did, who with, and what you wrote. *On this day* shows a week, a month and a year ago.
@@ -45,6 +47,8 @@ Installing it matters on iPhone: Safari may clear data from websites you haven't
 1. Merge this branch into `main`.
 2. In the repo: **Settings → Pages → Source: GitHub Actions**.
 3. The workflow in `.github/workflows/deploy.yml` builds and publishes on every push to `main`.
+
+The address follows the repository name (`…github.io/piteu`). To get `…github.io/bruna` instead, rename the repository on GitHub (Settings → General → Repository name) before installing it on your phone.
 
 ## Develop
 ```sh

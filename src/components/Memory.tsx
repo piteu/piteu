@@ -4,6 +4,7 @@ import { dayKey, formatTime, moodFace } from '../export';
 import { MOODS } from '../flows';
 import { type Day, type Quiz, type Thing, dayDetails, makeQuiz, onThisDay, relativeDay, scoreQuiz, things } from '../memory';
 import type { Entry } from '../types';
+import { daySummary } from '../details';
 
 type View = 'calendar' | 'last' | 'practice';
 
@@ -72,7 +73,7 @@ function DaySummary({ day }: { day: Day }) {
     <>
       {day.activities.length > 0 && <Chips items={day.activities} />}
       {day.people.length > 0 && <p className="small with">With {day.people.join(', ')}</p>}
-      {!day.activities.length && !day.people.length && day.notes[0] && <p className="small quote">“{day.notes[0]}”</p>}
+      {(day.details[0]?.text ?? day.notes[0]) && <p className="small quote">“{day.details[0]?.text ?? day.notes[0]}”</p>}
     </>
   );
 }
@@ -95,15 +96,16 @@ function DayView({ day, onBack }: { day: Day; onBack: () => void }) {
       {day.activities.length > 0 && (
         <section>
           <h2>What you did</h2>
-          <Chips items={day.activities} />
+          <ItemList items={day.activities} day={day} />
         </section>
       )}
       {day.people.length > 0 && (
         <section>
           <h2>Who you saw or talked to</h2>
-          <Chips items={day.people} />
+          <ItemList items={day.people} day={day} />
         </section>
       )}
+      <TellSomeone day={day} />
       {day.notes.length > 0 && (
         <section>
           <h2>What you wrote</h2>
@@ -132,6 +134,66 @@ function DayView({ day, onBack }: { day: Day; onBack: () => void }) {
         </section>
       )}
     </div>
+  );
+}
+
+function ItemList({ items, day }: { items: string[]; day: Day }) {
+  return (
+    <ul className="items">
+      {items.map((it) => {
+        const ds = day.details.filter((d) => d.item === it);
+        return (
+          <li key={it}>
+            <span className="tag">{it}</span>
+            {ds.map((d, i) => (
+              <p key={i} className="item-detail">
+                {d.text}
+              </p>
+            ))}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** A few plain lines about the day, to read out, copy or send to someone. */
+function TellSomeone({ day }: { day: Day }) {
+  const [done, setDone] = useState('');
+  const mood = avgMood(day.moods);
+  const text = daySummary({ ts: day.ts, activities: day.activities, people: day.people, details: day.details, mood: mood || undefined });
+  if (!text) return null;
+  const canShare = typeof navigator.share === 'function';
+  return (
+    <section className="card tell">
+      <h2>Tell someone about this day</h2>
+      <p className="tell-text">{text}</p>
+      <div className="row">
+        {canShare && (
+          <button
+            className="primary small"
+            onClick={() => navigator.share({ text }).catch(() => {})}
+          >
+            Share…
+          </button>
+        )}
+        <button
+          className={canShare ? 'link small' : 'primary small'}
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(text);
+              setDone('Copied — paste it into a message.');
+            } catch {
+              setDone('Couldn’t copy. You can select the text and copy it.');
+            }
+          }}
+        >
+          Copy text
+        </button>
+      </div>
+      {done && <p className="muted small">{done}</p>}
+      <p className="muted small">Only shared if you choose to — nothing is sent automatically.</p>
+    </section>
   );
 }
 
@@ -411,7 +473,9 @@ function Practice({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: number) 
         <p className="small hint-text">
           Hint: {mood ? `your mood was ${moodFace(mood)} ${MOODS[mood - 1].label.toLowerCase()}, and ` : ''}you logged{' '}
           {quiz.actual.length} things that day.
-          {quiz.day.notes[0] ? ` You wrote something starting “${quiz.day.notes[0].split(/\s+/).slice(0, 3).join(' ')}…”` : ''}
+          {(quiz.day.details[0]?.text ?? quiz.day.notes[0])
+            ? ` You wrote something starting “${(quiz.day.details[0]?.text ?? quiz.day.notes[0]).split(/\s+/).slice(0, 3).join(' ')}…”`
+            : ''}
         </p>
       )}
 
@@ -428,7 +492,11 @@ function Practice({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: number) 
                 : 'That’s okay — that’s exactly why you’re practising. Looking at it now helps it stick.'}
             {result.wrong.length > 0 && ` Crossed-out ones were a different day.`}
           </p>
-          {quiz.day.notes.length > 0 && <blockquote className="note-quote">{quiz.day.notes[0]}</blockquote>}
+          {[...quiz.day.details.map((d) => `${d.item}: ${d.text}`), ...quiz.day.notes].slice(0, 3).map((n, i) => (
+            <blockquote key={i} className="note-quote">
+              {n}
+            </blockquote>
+          ))}
         </div>
       )}
 

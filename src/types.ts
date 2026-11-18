@@ -22,6 +22,8 @@ export interface Entry {
   people?: string[];
   /** Your written answers (not taps). */
   notes?: string[];
+  /** Answers to the follow-up questions about specific things you did or people you saw. */
+  details?: { item: string; text: string }[];
   /** When the entry is about a different day than it was written (e.g. filling in yesterday). */
   aboutAt?: number;
   messages: Message[];

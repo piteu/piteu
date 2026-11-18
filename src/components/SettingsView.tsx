@@ -89,7 +89,7 @@ export default function SettingsView(p: Props) {
           className="secondary"
           onClick={async () => {
             try {
-              download(`piteu-backup-${today}.json`, JSON.stringify(await makeBackup()), 'application/json');
+              download(`bruna-backup-${today}.json`, JSON.stringify(await makeBackup()), 'application/json');
               setNote(
                 p.ring.mode === 'passphrase'
                   ? 'Backup saved. It’s encrypted with your passphrase.'
@@ -106,7 +106,7 @@ export default function SettingsView(p: Props) {
         <button
           className="secondary"
           onClick={async () => {
-            download(`piteu-journal-${today}.md`, toMarkdown(await listEntries(p.dataKey)), 'text/markdown');
+            download(`bruna-journal-${today}.md`, toMarkdown(await listEntries(p.dataKey)), 'text/markdown');
             setNote('Exported as a readable text file. This one is NOT encrypted — keep it somewhere safe.');
           }}
         >
@@ -143,7 +143,7 @@ export default function SettingsView(p: Props) {
         <Wipe />
       </section>
 
-      <p className="muted small center-text">Piteu · version 0.1</p>
+      <p className="muted small center-text">Bruna · version 0.1</p>
     </div>
   );
 }
@@ -262,7 +262,7 @@ function Restore({ dataKey, setNote }: { dataKey: CryptoKey; setNote: (s: string
             if (b.keyring?.mode === 'passphrase') setBackup(b);
             else await run(b);
           } catch {
-            setNote('That file isn’t a Piteu backup.');
+            setNote('That file isn’t a Bruna backup.');
           }
         }}
       />
@@ -342,8 +342,8 @@ function Reminder({ setNote }: { setNote: (s: string) => void }) {
         onClick={() => {
           const [h, m] = time.split(':').map(Number);
           const url = location.href.split('#')[0];
-          download('piteu-daily-reminder.ics', reminderIcs(h || 21, m || 0, url), 'text/calendar');
-          setNote('Reminder file created. Open it and choose “Add to Calendar”. The reminder only says “Piteu: what did you do today?” — nothing from your journal.');
+          download('bruna-daily-reminder.ics', reminderIcs(h || 21, m || 0, url), 'text/calendar');
+          setNote('Reminder file created. Open it and choose “Add to Calendar”. The reminder only says “Bruna: what did you do today?” — nothing from your journal.');
         }}
       >
         Add reminder to my calendar

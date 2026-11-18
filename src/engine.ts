@@ -1,4 +1,5 @@
 import { type Answers, type Ctx, type Step, flowById, MOODS } from './flows';
+import { followupsFor } from './details';
 
 /** The question currently waiting for an answer, with all text resolved. */
 export interface Prompt {
@@ -9,10 +10,11 @@ export interface Prompt {
   options?: string[];
   multi?: boolean;
   other?: string; // label for "add your own"
-
   starters?: string[];
   easier?: string;
   isNudge?: boolean;
+  /** Set on follow-up questions: the activity or person being asked about. */
+  about?: string;
 }
 
 export interface Session {
@@ -22,6 +24,8 @@ export interface Session {
   nudged: boolean; // at most one nudge per session
   current: Prompt | null;
   done: boolean;
+  /** Follow-up questions still to ask. */
+  queue: Prompt[];
 }
 
 export interface Opts {
@@ -61,6 +65,11 @@ function toPrompt(step: Step, i: number, c: Ctx): Prompt {
 }
 
 function advance(s: Session, opts: Opts, said: string[]): Out {
+  if (s.queue.length) {
+    const [p, ...rest] = s.queue;
+    said.push(p.text);
+    return { session: { ...s, current: p, queue: rest }, said };
+  }
   const flow = flowById(s.flowId);
   const c: Ctx = { answers: s.answers, name: opts.name, known: opts.known };
   for (let i = s.next; i < flow.steps.length; i++) {
@@ -70,6 +79,15 @@ function advance(s: Session, opts: Opts, said: string[]): Out {
       said.push(resolve(step.text, c));
       continue;
     }
+    if (step.kind === 'followups') {
+      const qs: Prompt[] = followupsFor(c, step.max).map((f) => ({
+        kind: 'write', id: `about:${f.item}`, stepIndex: i, text: f.text, starters: f.starters, easier: f.easier, about: f.item,
+      }));
+      if (!qs.length) continue;
+      // Remember what was asked about, so later steps can tell follow-ups happened.
+      const answers = { ...s.answers, followups: qs.map((q) => q.about!) };
+      return advance({ ...s, answers, next: i + 1, queue: qs }, opts, said);
+    }
     const p = toPrompt(step, i, c);
     said.push(p.text);
     return { session: { ...s, next: i + 1, current: p }, said };
@@ -78,7 +96,7 @@ function advance(s: Session, opts: Opts, said: string[]): Out {
 }
 
 export function start(flowId: string, opts: Opts = {}, preset: Answers = {}): Out {
-  const s: Session = { flowId, next: 0, answers: { ...preset }, nudged: false, current: null, done: false };
+  const s: Session = { flowId, next: 0, answers: { ...preset }, nudged: false, current: null, done: false, queue: [] };
   return advance(s, opts, []);
 }
 
@@ -111,6 +129,11 @@ export function answer(s: Session, value: AnswerValue, opts: Opts = {}): Out {
   }
 
   return advance({ ...s, answers, current: null }, opts, []);
+}
+
+/** Skip the remaining follow-up questions and carry on with the check-in. */
+export function skipFollowups(s: Session, opts: Opts = {}): Out {
+  return advance({ ...s, queue: [], current: null }, opts, []);
 }
 
 /** What the user's answer looks like as a chat bubble. */
