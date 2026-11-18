@@ -19,6 +19,15 @@ export const formatTime = (ts: number) => new Date(ts).toLocaleTimeString(undefi
 
 export const moodFace = (m?: number) => MOODS.find((x) => x.value === m)?.face ?? '';
 
+/** The things you actually wrote in an entry (not mood taps or chip choices). */
+export function writtenTexts(e: Entry): string[] {
+  const tapped = new Set([e.feelings?.join(', '), e.topics?.join(', ')]);
+  const moodLabels = new Set(MOODS.map((m) => `${m.face} ${m.label}`));
+  return e.messages
+    .filter((m) => m.from === 'me' && !tapped.has(m.text) && !moodLabels.has(m.text))
+    .map((m) => m.text);
+}
+
 export function toMarkdown(entries: Entry[]): string {
   const lines = ['# My Piteu journal', ''];
   const sorted = [...entries].sort((a, b) => a.createdAt - b.createdAt);

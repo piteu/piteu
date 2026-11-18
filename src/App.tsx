@@ -8,9 +8,10 @@ import Lock from './components/Lock';
 import Chat from './components/Chat';
 import Journal from './components/Journal';
 import SettingsView from './components/SettingsView';
+import Insights from './components/Insights';
 
 type Phase = 'loading' | 'setup' | 'locked' | 'ready';
-type Tab = 'today' | 'journal' | 'settings';
+type Tab = 'today' | 'journal' | 'insights' | 'settings';
 
 export default function App() {
   const [phase, setPhase] = useState<Phase>('loading');
@@ -96,6 +97,7 @@ export default function App() {
           <Chat dataKey={key} settings={settings} />
         </div>
         {tab === 'journal' && <Journal dataKey={key} />}
+        {tab === 'insights' && <Insights dataKey={key} />}
         {tab === 'settings' && (
           <SettingsView
             dataKey={key}
@@ -112,6 +114,7 @@ export default function App() {
       <nav className="tabs" aria-label="Sections">
         <TabButton active={tab === 'today'} onClick={() => setTab('today')} icon="💬" label="Today" />
         <TabButton active={tab === 'journal'} onClick={() => setTab('journal')} icon="📖" label="Journal" />
+        <TabButton active={tab === 'insights'} onClick={() => setTab('insights')} icon="📈" label="Insights" />
         <TabButton active={tab === 'settings'} onClick={() => setTab('settings')} icon="⚙️" label="Settings" />
       </nav>
     </div>

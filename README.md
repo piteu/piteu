@@ -13,6 +13,12 @@ It's built for people who find writing hard.
 
 The questions live in [`src/flows.ts`](src/flows.ts). They're plain text, easy to change or add to.
 
+## Insights
+The Insights tab shows how things change over a **week, month or year**, and you can step back to earlier periods:
+check-ins, days journaled, average mood compared with the previous period, current streak, a mood chart
+(tap for details, or view it as a table), your most-picked feelings, what your check-ins were about (with your
+usual mood for each), and mood by day of the week. It's all calculated on your device.
+
 ## Privacy
 - Entries are stored **only on your device**, in the browser's IndexedDB, encrypted with AES-256-GCM.
 - With a passphrase, the encryption key is protected by your passphrase (PBKDF2, 600,000 rounds). Without it, nobody can read your entries — including you, if you forget it.

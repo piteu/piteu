@@ -7,6 +7,7 @@
   --line: #e2d7c9;
   --accent: #c8643b;
   --accent-text: #fff;
+  --chart: #c8643b; /* validated for charts in each mode */
   --me: #c8643b;
   --me-text: #fff;
   --app: #fffaf3;
@@ -24,6 +25,7 @@
     --muted: #a39a90;
     --line: #3a3632;
     --accent: #e07a50;
+    --chart: #d9724a;
     --me: #b8572f;
     --app: #2a2826;
     --warn: #f08a6c;
@@ -176,3 +178,47 @@ ul.plain li { margin: 6px 0; }
 .tag { background: var(--surface-2); border-radius: 999px; padding: 3px 10px; font-size: 0.82rem; }
 .transcript { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
 .confirm { display: flex; gap: 10px; align-items: center; }
+
+/* Insights */
+.segmented { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface-2); border-radius: 12px; padding: 3px; }
+.segmented button { border: 0; background: none; border-radius: 9px; padding: 8px 0; font-size: 0.92rem; color: var(--muted); }
+.segmented button.on { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+.periodnav { display: flex; align-items: center; justify-content: space-between; margin: 10px 0 4px; font-weight: 600; }
+.periodnav .link { font-size: 1.6rem; line-height: 1; padding: 4px 14px; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tile-label { font-size: 0.8rem; color: var(--muted); }
+.tile-value { font-size: 1.35rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile-delta { font-size: 0.78rem; color: var(--muted); }
+.empty { margin: 24px 0; text-align: center; }
+.hint { margin: -4px 0 8px; }
+
+.moodchart svg { display: block; overflow: visible; }
+.readout { font-size: 0.88rem; margin: 0 0 6px; min-height: 1.3em; }
+.grid { stroke: var(--line); stroke-width: 1; }
+.ytick { font-size: 13px; }
+.xtick { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.xtick.future { opacity: 0.45; }
+.crosshair { stroke: var(--muted); stroke-width: 1; }
+.moodline { fill: none; stroke: var(--chart); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.mooddot { fill: var(--chart); stroke: var(--surface); stroke-width: 2; }
+.tableview { margin-top: 8px; font-size: 0.88rem; }
+.tableview summary { color: var(--accent); cursor: pointer; padding: 4px 0; }
+.tableview table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+.tableview th, .tableview td { text-align: left; padding: 5px 4px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.tableview th { color: var(--muted); font-weight: 500; }
+
+.bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.bars li { display: grid; grid-template-columns: 6.5em 1fr; align-items: center; gap: 8px; font-size: 0.9rem; }
+.bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.bar { height: 14px; background: var(--chart); border-radius: 0 4px 4px 0; min-width: 4px; flex: none; }
+.bar-value { white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 0.85rem; }
+.bar-note { margin-left: 2px; }
+
+.weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 140px; padding-top: 26px; }
+.wd { display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 0; }
+.wd-col { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; border-bottom: 1px solid var(--line); }
+.wd-bar { position: relative; width: 60%; max-width: 24px; background: var(--chart); border-radius: 4px 4px 0 0; }
+.wd-face { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 2px; font-size: 1rem; }
+.wd-label { font-size: 0.75rem; color: var(--muted); }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { deleteEntry, listEntries } from '../db';
-import { dayKey, formatDay, formatTime, moodFace } from '../export';
+import { dayKey, formatDay, formatTime, moodFace, writtenTexts } from '../export';
 import type { Entry } from '../types';
 
 export default function Journal({ dataKey }: { dataKey: CryptoKey }) {
@@ -155,12 +155,8 @@ function EntryView({ entry, onBack, onDelete }: { entry: Entry; onBack: () => vo
   );
 }
 
-/** The longest thing you wrote, falling back to mood/feelings when you only tapped. */
 function entryPreview(e: Entry): string {
-  const tapped = new Set([e.feelings?.join(', '), e.topics?.join(', ')]);
-  const written = e.messages
-    .filter((m) => m.from === 'me' && !tapped.has(m.text) && !/^\p{Extended_Pictographic}/u.test(m.text))
-    .map((m) => m.text);
-  if (written.length) return written.sort((a, b) => b.length - a.length)[0];
+  const written = writtenTexts(e);
+  if (written.length) return [...written].sort((a, b) => b.length - a.length)[0];
   return [...(e.feelings ?? []), ...(e.topics ?? [])].join(', ');
 }
