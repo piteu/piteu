@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { deleteEntry, listEntries } from '../db';
 import { dayKey, formatDay, formatTime, moodFace, writtenTexts } from '../export';
-import type { Entry } from '../types';
+import { type Entry, entryTime } from '../types';
 
 export default function Journal({ dataKey }: { dataKey: CryptoKey }) {
   const [entries, setEntries] = useState<Entry[] | null>(null);
@@ -9,7 +9,7 @@ export default function Journal({ dataKey }: { dataKey: CryptoKey }) {
   const [open, setOpen] = useState<Entry | null>(null);
 
   useEffect(() => {
-    listEntries(dataKey).then(setEntries);
+    listEntries(dataKey).then((es) => setEntries(es.sort((a, b) => entryTime(b) - entryTime(a))));
   }, [dataKey]);
 
   const filtered = useMemo(() => {
@@ -17,7 +17,7 @@ export default function Journal({ dataKey }: { dataKey: CryptoKey }) {
     const s = q.trim().toLowerCase();
     if (!s) return entries;
     return entries.filter((e) =>
-      [e.flowTitle, ...(e.feelings ?? []), ...(e.topics ?? []), ...e.messages.map((m) => m.text)]
+      [e.flowTitle, ...(e.feelings ?? []), ...(e.topics ?? []), ...(e.activities ?? []), ...(e.people ?? []), ...e.messages.map((m) => m.text)]
         .join(' ')
         .toLowerCase()
         .includes(s),
@@ -27,9 +27,9 @@ export default function Journal({ dataKey }: { dataKey: CryptoKey }) {
   const groups = useMemo(() => {
     const out: { day: string; label: string; items: Entry[] }[] = [];
     for (const e of filtered) {
-      const k = dayKey(e.createdAt);
+      const k = dayKey(entryTime(e));
       if (out.length && out[out.length - 1].day === k) out[out.length - 1].items.push(e);
-      else out.push({ day: k, label: formatDay(e.createdAt), items: [e] });
+      else out.push({ day: k, label: formatDay(entryTime(e)), items: [e] });
     }
     return out;
   }, [filtered]);
@@ -87,7 +87,7 @@ function MoodStrip({ entries }: { entries: Entry[] }) {
   const days = useMemo(() => {
     const byDay = new Map<string, number[]>();
     for (const e of entries) if (e.mood) {
-      const k = dayKey(e.createdAt);
+      const k = dayKey(entryTime(e));
       byDay.set(k, [...(byDay.get(k) ?? []), e.mood]);
     }
     const out = [];
@@ -126,13 +126,14 @@ function EntryView({ entry, onBack, onDelete }: { entry: Entry; onBack: () => vo
       <p className="muted">
         {formatDay(entry.createdAt)} · {formatTime(entry.createdAt)}
       </p>
-      {(entry.feelings?.length || entry.topics?.length) && (
+      {entry.aboutAt && <p className="muted small">About {formatDay(entry.aboutAt).toLowerCase()}, written later.</p>}
+      {(entry.feelings?.length || entry.topics?.length || entry.activities?.length || entry.people?.length) ? (
         <div className="tags">
-          {[...(entry.feelings ?? []), ...(entry.topics ?? [])].map((t) => (
+          {[...(entry.activities ?? []), ...(entry.people ?? []), ...(entry.feelings ?? []), ...(entry.topics ?? [])].map((t) => (
             <span key={t} className="tag">{t}</span>
           ))}
         </div>
-      )}
+      ) : null}
       <div className="transcript">
         {entry.messages.map((m, i) => (
           <div key={i} className={`bubble from-${m.from}`}>

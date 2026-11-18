@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { type Keyring, makeKeyring, openKeyring } from '../crypto';
 import { type Backup, listEntries, makeBackup, restoreBackup, setAutoLock, setKeyring, wipeAll } from '../db';
-import { dayKey, download, toMarkdown } from '../export';
+import { dayKey, download, reminderIcs, toMarkdown } from '../export';
 import type { Settings } from '../types';
 
 interface Props {
@@ -47,6 +47,8 @@ export default function SettingsView(p: Props) {
           <span>After a very short answer, gently ask for a little more (once per check-in)</span>
         </label>
       </section>
+
+      <Reminder setNote={setNote} />
 
       <section className="card">
         <h2>Lock</h2>
@@ -319,5 +321,33 @@ function Wipe() {
         </button>
       </div>
     </div>
+  );
+}
+
+function Reminder({ setNote }: { setNote: (s: string) => void }) {
+  const [time, setTime] = useState('21:00');
+  return (
+    <section className="card">
+      <h2>Daily reminder</h2>
+      <p className="small">
+        Remembering to log is half the battle. This adds a daily reminder to your phone’s calendar — it opens a file your
+        phone asks to add to Calendar.
+      </p>
+      <label className="field">
+        <span>Remind me every day at</span>
+        <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+      </label>
+      <button
+        className="secondary"
+        onClick={() => {
+          const [h, m] = time.split(':').map(Number);
+          const url = location.href.split('#')[0];
+          download('piteu-daily-reminder.ics', reminderIcs(h || 21, m || 0, url), 'text/calendar');
+          setNote('Reminder file created. Open it and choose “Add to Calendar”. The reminder only says “Piteu: what did you do today?” — nothing from your journal.');
+        }}
+      >
+        Add reminder to my calendar
+      </button>
+    </section>
   );
 }

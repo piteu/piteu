@@ -139,6 +139,9 @@ ul.plain li { margin: 6px 0; }
 .mood .face { font-size: 1.7rem; line-height: 1.2; }
 .mood:active { background: var(--surface-2); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips.choice { max-height: 42dvh; overflow-y: auto; }
+.inputrow input { border-radius: 22px; padding: 10px 16px; }
+.flow-card.highlight { border-color: var(--accent); border-width: 1.5px; }
 .chips.starters { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
 .chips.starters::-webkit-scrollbar { display: none; }
 .chip {
@@ -222,3 +225,58 @@ ul.plain li { margin: 6px 0; }
 .wd-bar { position: relative; width: 60%; max-width: 24px; background: var(--chart); border-radius: 4px 4px 0 0; }
 .wd-face { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 2px; font-size: 1rem; }
 .wd-label { font-size: 0.75rem; color: var(--muted); }
+
+/* Memory */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.memory .segmented button { font-size: 0.85rem; padding: 8px 2px; }
+.memory-card {
+  width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  padding: 10px 12px; margin: 6px 0; display: flex; flex-direction: column; gap: 6px;
+}
+.memory-when { font-weight: 600; font-size: 0.95rem; }
+.memory-card .tags { margin: 0; }
+.with { margin: 0; color: var(--muted); }
+.quote { margin: 0; color: var(--muted); font-style: italic; }
+.note-quote { margin: 6px 0; padding: 8px 12px; border-left: 3px solid var(--accent); background: var(--surface); border-radius: 0 10px 10px 0; white-space: pre-wrap; }
+
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-head { text-align: center; font-size: 0.75rem; color: var(--muted); padding-bottom: 2px; }
+.cal-day {
+  position: relative; aspect-ratio: 1; border: 1px solid transparent; border-radius: 10px; background: var(--surface);
+  display: grid; place-items: center; font-size: 0.9rem; font-variant-numeric: tabular-nums; padding: 0;
+}
+.cal-day:disabled { opacity: 0.35; }
+.cal-day.today { border-color: var(--text); font-weight: 700; }
+.cal-day.m1 { background: var(--m1); } .cal-day.m2 { background: var(--m2); } .cal-day.m3 { background: var(--m3); }
+.cal-day.m4 { background: var(--m4); } .cal-day.m5 { background: var(--m5); }
+.cal-day.has.m0 { background: var(--surface-2); }
+.cal-dot { position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--text); }
+.cal-dot.inline { position: static; display: inline-block; transform: none; vertical-align: middle; }
+.cal-legend { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 2px; align-items: center; }
+.swatch { display: inline-block; width: 12px; height: 12px; border-radius: 4px; vertical-align: middle; }
+.swatch.m1 { background: var(--m1); } .swatch.m2 { background: var(--m2); } .swatch.m3 { background: var(--m3); }
+.swatch.m4 { background: var(--m4); } .swatch.m5 { background: var(--m5); }
+
+.chips.filter { margin: 8px 0; }
+.last-list { list-style: none; padding: 0; margin: 0; }
+.last-row {
+  width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; margin: 6px 0 0;
+}
+.last-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.last-label { font-weight: 600; }
+.last-when { font-size: 0.88rem; color: var(--muted); }
+.last-when b { color: var(--text); font-weight: 600; }
+.last-count { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+.last-days { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 4px 4px; }
+.last-days .gap { width: 100%; margin: 4px 0 0; }
+
+.practice-q { font-size: 1.15rem; font-weight: 600; margin: 0 0 4px; }
+.practice .chips { margin: 12px 0; }
+.chip.got { background: var(--accent); color: var(--accent-text); border-color: var(--accent); opacity: 1; }
+.chip.missed { border: 1.5px dashed var(--accent); color: var(--text); opacity: 1; }
+.chip.wrong { text-decoration: line-through; color: var(--muted); opacity: 1; }
+.chip.dim { opacity: 0.35; }
+.chip:disabled { cursor: default; }
+.hint-text { background: var(--surface-2); border-radius: 10px; padding: 8px 12px; }
+.practice-result p { margin: 4px 0 8px; }

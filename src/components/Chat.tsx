@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { type AnswerValue, type Session, answer, displayAnswer, start } from '../engine';
-import { FLOWS, MOODS, flowById, suggestedFlowId } from '../flows';
-import { saveEntry } from '../db';
+import { type Answers, FLOWS, MOODS, NO_ONE, flowById, suggestedFlowId } from '../flows';
+import { listEntries, saveEntry } from '../db';
+import { known, yesterdayMissing } from '../memory';
 import type { Entry, Message, Mood, Settings } from '../types';
 
 function greeting(name?: string) {
@@ -13,8 +14,9 @@ function greeting(name?: string) {
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
 const msg = (from: Message['from'], text: string): Message => ({ from, text, at: Date.now() });
 
-export default function Chat({ dataKey, settings }: { dataKey: CryptoKey; settings: Settings }) {
-  const opts = { name: settings.name, nudges: settings.nudges };
+export default function Chat({ dataKey, settings, active }: { dataKey: CryptoKey; settings: Settings; active: boolean }) {
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const opts = { name: settings.name, nudges: settings.nudges, known: known(entries) };
   const [msgs, setMsgs] = useState<Message[]>(() => [msg('app', greeting(settings.name))]);
   const [session, setSession] = useState<Session | null>(null);
   const [entryMeta, setEntryMeta] = useState<{ id: string; createdAt: number; from: number } | null>(null);
@@ -22,11 +24,20 @@ export default function Chat({ dataKey, settings }: { dataKey: CryptoKey; settin
   const [picked, setPicked] = useState<string[]>([]);
   const [easierShown, setEasierShown] = useState(false);
   const [saveErr, setSaveErr] = useState(false);
+  const [extra, setExtra] = useState<string[]>([]); // options you added yourself to the current question
+  const [adding, setAdding] = useState('');
+  const [addOpen, setAddOpen] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const chipsRef = useRef<HTMLDivElement>(null);
 
   const current = session?.current ?? null;
   const idle = !session || session.done;
+
+  // Refresh what we know from past entries whenever this tab is shown.
+  useEffect(() => {
+    if (active) listEntries(dataKey).then(setEntries).catch(() => {});
+  }, [active, dataKey]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -40,14 +51,21 @@ export default function Chat({ dataKey, settings }: { dataKey: CryptoKey; settin
     el.style.height = Math.min(el.scrollHeight, 180) + 'px';
   }, [text]);
 
-  function begin(flowId: string, firstText?: string) {
-    const out = start(flowId, opts);
-    const base = [...msgs];
+  function resetInputs() {
+    setPicked([]);
+    setEasierShown(false);
+    setExtra([]);
+    setAdding('');
+    setAddOpen(false);
+  }
+
+  function begin(flowId: string, firstText?: string, preset?: Answers, intro?: string) {
+    const out = start(flowId, opts, preset);
+    const base = [...msgs, ...(intro ? [msg('app', intro)] : [])];
     const meta = { id: uid(), createdAt: Date.now(), from: base.length };
     const next = [...base, ...out.said.map((t) => msg('app', t))];
     setEntryMeta(meta);
-    setPicked([]);
-    setEasierShown(false);
+    resetInputs();
     if (firstText !== undefined) {
       reply(out.session, next, meta, firstText);
     } else {
@@ -65,8 +83,7 @@ export default function Chat({ dataKey, settings }: { dataKey: CryptoKey; settin
     setSession(out.session);
     setMsgs(next);
     setText('');
-    setPicked([]);
-    setEasierShown(false);
+    resetInputs();
     persist(out.session, next.slice(meta.from), meta);
   }
 
@@ -75,6 +92,17 @@ export default function Chat({ dataKey, settings }: { dataKey: CryptoKey; settin
     if (!answered) return; // nothing worth saving yet
     const flow = flowById(s.flowId);
     const a = s.answers;
+    const list = (v: unknown) => (Array.isArray(v) && v.length ? (v as string[]) : undefined);
+    const writeIds = new Set(flow.steps.flatMap((st) => (st.kind === 'write' ? [st.id] : [])));
+    const notes = [...writeIds].map((id) => a[id]).filter((v): v is string => typeof v === 'string' && !!v.trim());
+
+    // Which day is this about? (Filling in yesterday, or an evening check-in after midnight.)
+    const made = new Date(meta.createdAt);
+    const back = a.day === 'Yesterday' ? 1 : a.day === '2 days ago' ? 2 : flow.id === 'evening' && made.getHours() < 4 ? 1 : 0;
+    const aboutAt = back
+      ? new Date(made.getFullYear(), made.getMonth(), made.getDate() - back, a.day ? 12 : 23).getTime()
+      : undefined;
+
     const entry: Entry = {
       id: meta.id,
       createdAt: meta.createdAt,
@@ -84,15 +112,46 @@ export default function Chat({ dataKey, settings }: { dataKey: CryptoKey; settin
       mood: typeof a.mood === 'number' ? (a.mood as Mood) : undefined,
       feelings: Array.isArray(a.feelings) ? a.feelings : undefined,
       topics: Array.isArray(a.topics) ? a.topics : undefined,
+      activities: list(a.activities),
+      people: list((list(a.people) ?? []).filter((x) => x !== NO_ONE)),
+      notes,
+      aboutAt,
       // Drop the closing "Anything else?" line from the saved entry.
       messages: messages.filter((m) => !(m.from === 'app' && m.text.startsWith('Anything else?'))),
     };
     try {
       await saveEntry(dataKey, entry);
+      setEntries((es) => [entry, ...es.filter((x) => x.id !== entry.id)]);
       setSaveErr(false);
     } catch {
       setSaveErr(true);
     }
+  }
+
+  function toggle(o: string) {
+    setPicked((p) => {
+      if (p.includes(o)) return p.filter((x) => x !== o);
+      // "No one" can't be combined with names.
+      if (o === NO_ONE) return [o];
+      return [...p.filter((x) => x !== NO_ONE), o];
+    });
+  }
+
+  function addOwn() {
+    let v = adding.trim().replace(/\s+/g, ' ');
+    if (!v || !current) return;
+    // Names typed all in lowercase get capitals: "joana silva" → "Joana Silva".
+    if (current.id === 'people' && v === v.toLowerCase()) v = v.replace(/(^|[\s-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase());
+    // Reuse the existing spelling if it's already an option (e.g. "rita" → "Rita").
+    const match = [...extra, ...(current.options ?? [])].find((o) => o.toLowerCase() === v.toLowerCase());
+    const val = match ?? v;
+    if (!match) setExtra((x) => [...x, val]);
+    if (current.multi) setPicked((p) => (p.includes(val) ? p : [...p.filter((x) => x !== NO_ONE), val]));
+    else send(val);
+    setAdding('');
+    setAddOpen(false);
+    // Show the new chip (it's added at the top of the list).
+    requestAnimationFrame(() => chipsRef.current?.scrollTo({ top: 0, behavior: 'smooth' }));
   }
 
   function send(value: AnswerValue) {
@@ -125,6 +184,7 @@ export default function Chat({ dataKey, settings }: { dataKey: CryptoKey; settin
   }
 
   const suggested = suggestedFlowId();
+  const showYesterday = entries.length > 0 && yesterdayMissing(entries);
   const flowsOrdered = [...FLOWS].sort((a, b) => (a.id === suggested ? -1 : b.id === suggested ? 1 : 0));
 
   return (
@@ -138,6 +198,15 @@ export default function Chat({ dataKey, settings }: { dataKey: CryptoKey; settin
 
         {idle && (
           <div className="flows">
+            {showYesterday && (
+              <button
+                className="flow-card highlight"
+                onClick={() => begin('log', undefined, { day: 'Yesterday' }, 'Let’s fill in yesterday.')}
+              >
+                <span className="flow-title">Fill in yesterday</span>
+                <span className="flow-blurb">You haven’t logged what you did yesterday. Takes a few taps.</span>
+              </button>
+            )}
             {flowsOrdered.map((f) => (
               <button key={f.id} className="flow-card" onClick={() => begin(f.id)}>
                 <span className="flow-title">
@@ -169,23 +238,49 @@ export default function Chat({ dataKey, settings }: { dataKey: CryptoKey; settin
         )}
 
         {current?.kind === 'choice' && (
-          <div className="chips" role="group">
-            {current.options!.map((o) => {
+          <div className="chips choice" role="group" ref={chipsRef}>
+            {[...extra, ...current.options!.filter((o) => !extra.includes(o))].map((o) => {
               const on = picked.includes(o);
               return (
                 <button
                   key={o}
                   className={`chip ${on ? 'on' : ''}`}
                   aria-pressed={current.multi ? on : undefined}
-                  onClick={() =>
-                    current.multi ? setPicked((p) => (on ? p.filter((x) => x !== o) : [...p, o])) : send(o)
-                  }
+                  onClick={() => (current.multi ? toggle(o) : send(o))}
                 >
                   {o}
                 </button>
               );
             })}
+            {current.other && !addOpen && (
+              <button className="chip ghost" onClick={() => setAddOpen(true)}>
+                + {current.other}
+              </button>
+            )}
           </div>
+        )}
+
+        {current?.kind === 'choice' && addOpen && (
+          <form
+            className="inputrow"
+            onSubmit={(e) => {
+              e.preventDefault();
+              addOwn();
+            }}
+          >
+            <input
+              autoFocus
+              value={adding}
+              onChange={(e) => setAdding(e.target.value)}
+              placeholder={current.id === 'people' ? 'Their name' : 'e.g. Climbing'}
+              autoCapitalize={current.id === 'people' ? 'words' : 'sentences'}
+              aria-label={current.other}
+              maxLength={40}
+            />
+            <button className="primary small" disabled={!adding.trim()}>
+              Add
+            </button>
+          </form>
         )}
 
         {current?.kind === 'write' && !current.isNudge && current.starters && !text && (

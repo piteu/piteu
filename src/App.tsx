@@ -9,9 +9,10 @@ import Chat from './components/Chat';
 import Journal from './components/Journal';
 import SettingsView from './components/SettingsView';
 import Insights from './components/Insights';
+import Memory from './components/Memory';
 
 type Phase = 'loading' | 'setup' | 'locked' | 'ready';
-type Tab = 'today' | 'journal' | 'insights' | 'settings';
+type Tab = 'today' | 'journal' | 'memory' | 'insights' | 'settings';
 
 export default function App() {
   const [phase, setPhase] = useState<Phase>('loading');
@@ -94,9 +95,10 @@ export default function App() {
       <main className="main">
         {/* Chat stays mounted so a check-in in progress isn't lost when switching tabs. */}
         <div hidden={tab !== 'today'} className="tabpane">
-          <Chat dataKey={key} settings={settings} />
+          <Chat dataKey={key} settings={settings} active={tab === 'today'} />
         </div>
         {tab === 'journal' && <Journal dataKey={key} />}
+        {tab === 'memory' && <Memory dataKey={key} />}
         {tab === 'insights' && <Insights dataKey={key} />}
         {tab === 'settings' && (
           <SettingsView
@@ -114,6 +116,7 @@ export default function App() {
       <nav className="tabs" aria-label="Sections">
         <TabButton active={tab === 'today'} onClick={() => setTab('today')} icon="💬" label="Today" />
         <TabButton active={tab === 'journal'} onClick={() => setTab('journal')} icon="📖" label="Journal" />
+        <TabButton active={tab === 'memory'} onClick={() => setTab('memory')} icon="🧠" label="Memory" />
         <TabButton active={tab === 'insights'} onClick={() => setTab('insights')} icon="📈" label="Insights" />
         <TabButton active={tab === 'settings'} onClick={() => setTab('settings')} icon="⚙️" label="Settings" />
       </nav>

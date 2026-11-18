@@ -16,8 +16,19 @@ export interface Entry {
   mood?: Mood;
   feelings?: string[];
   topics?: string[];
+  /** What you did, e.g. "🚶 Walk" (from the "What I did" and "End of day" check-ins). */
+  activities?: string[];
+  /** Who you saw or talked to. */
+  people?: string[];
+  /** Your written answers (not taps). */
+  notes?: string[];
+  /** When the entry is about a different day than it was written (e.g. filling in yesterday). */
+  aboutAt?: number;
   messages: Message[];
 }
+
+/** The moment an entry is "about": usually when it was written, unless it was filled in later. */
+export const entryTime = (e: Pick<Entry, 'createdAt' | 'aboutAt'>) => e.aboutAt ?? e.createdAt;
 
 export interface Settings {
   name?: string;

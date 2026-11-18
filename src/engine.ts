@@ -8,6 +8,8 @@ export interface Prompt {
   text: string;
   options?: string[];
   multi?: boolean;
+  other?: string; // label for "add your own"
+
   starters?: string[];
   easier?: string;
   isNudge?: boolean;
@@ -25,6 +27,7 @@ export interface Session {
 export interface Opts {
   name?: string;
   nudges?: boolean;
+  known?: Ctx['known'];
 }
 
 export interface Out {
@@ -44,7 +47,7 @@ function toPrompt(step: Step, i: number, c: Ctx): Prompt {
     case 'choice':
       return {
         kind: 'choice', id: step.id, stepIndex: i, text: resolve(step.text, c),
-        options: resolve(step.options, c), multi: step.multi,
+        options: resolve(step.options, c), multi: step.multi, other: step.other,
       };
     case 'write':
       return {
@@ -59,7 +62,7 @@ function toPrompt(step: Step, i: number, c: Ctx): Prompt {
 
 function advance(s: Session, opts: Opts, said: string[]): Out {
   const flow = flowById(s.flowId);
-  const c: Ctx = { answers: s.answers, name: opts.name };
+  const c: Ctx = { answers: s.answers, name: opts.name, known: opts.known };
   for (let i = s.next; i < flow.steps.length; i++) {
     const step = flow.steps[i];
     if (step.when && !step.when(c)) continue;
@@ -74,8 +77,8 @@ function advance(s: Session, opts: Opts, said: string[]): Out {
   return { session: { ...s, next: flow.steps.length, current: null, done: true }, said };
 }
 
-export function start(flowId: string, opts: Opts = {}): Out {
-  const s: Session = { flowId, next: 0, answers: {}, nudged: false, current: null, done: false };
+export function start(flowId: string, opts: Opts = {}, preset: Answers = {}): Out {
+  const s: Session = { flowId, next: 0, answers: { ...preset }, nudged: false, current: null, done: false };
   return advance(s, opts, []);
 }
 
@@ -102,7 +105,7 @@ export function answer(s: Session, value: AnswerValue, opts: Opts = {}): Out {
     opts.nudges !== false && !s.nudged && step.kind === 'write' && step.nudge &&
     typeof value === 'string' && value.trim() && wordCount(value) <= 3
   ) {
-    const text = resolve(step.nudge, { answers, name: opts.name });
+    const text = resolve(step.nudge, { answers, name: opts.name, known: opts.known });
     const nudge: Prompt = { kind: 'write', id: p.id, stepIndex: p.stepIndex, text, isNudge: true };
     return { session: { ...s, answers, nudged: true, current: nudge }, said: [text] };
   }

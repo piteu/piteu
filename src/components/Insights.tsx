@@ -111,6 +111,27 @@ export default function Insights({ dataKey }: { dataKey: CryptoKey }) {
             </section>
           )}
 
+          {s.activities.length > 0 && (
+            <section className="card">
+              <h2>What you did most</h2>
+              <Bars
+                rows={s.activities.slice(0, 6).map((t) => ({
+                  label: t.name,
+                  n: t.n,
+                  note: t.avg !== undefined ? `usually ${moodNear(t.avg).face}` : undefined,
+                  noteLabel: t.avg !== undefined ? `usually ${moodNear(t.avg).label}` : undefined,
+                }))}
+              />
+            </section>
+          )}
+
+          {s.people.length > 0 && (
+            <section className="card">
+              <h2>People you saw most</h2>
+              <Bars rows={s.people.slice(0, 6).map((t) => ({ label: t.name, n: t.n }))} />
+            </section>
+          )}
+
           {range !== 'week' && s.weekdays.filter((d) => d.n).length >= 3 && (
             <section className="card">
               <h2>Mood by day of the week</h2>

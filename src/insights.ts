@@ -1,5 +1,5 @@
 import { dayKey, writtenTexts } from './export';
-import type { Entry } from './types';
+import { type Entry, entryTime } from './types';
 
 export type Range = 'week' | 'month' | 'year';
 
@@ -106,11 +106,13 @@ export interface Summary {
   buckets: Bucket[];
   feelings: { name: string; n: number }[];
   topics: { name: string; n: number; avg?: number }[];
+  activities: { name: string; n: number; avg?: number }[];
+  people: { name: string; n: number; avg?: number }[];
   weekdays: { label: string; avg?: number; n: number }[];
 }
 
 function inPeriod(entries: Entry[], p: { start: number; end: number }) {
-  return entries.filter((e) => e.createdAt >= p.start && e.createdAt < p.end);
+  return entries.filter((e) => entryTime(e) >= p.start && entryTime(e) < p.end);
 }
 
 export function summarize(all: Entry[], range: Range, offset = 0, now = new Date()): Summary {
@@ -121,15 +123,15 @@ export function summarize(all: Entry[], range: Range, offset = 0, now = new Date
   const moods = (es: Entry[]) => es.filter((e) => e.mood).map((e) => e.mood!);
 
   const buckets = period.buckets.map((b) => {
-    const m = moods(entries.filter((e) => e.createdAt >= b.start && e.createdAt < b.end));
+    const m = moods(entries.filter((e) => entryTime(e) >= b.start && entryTime(e) < b.end));
     return { ...b, n: m.length, avg: avg(m) };
   });
 
-  const count = (key: 'feelings' | 'topics') => {
+  const count = (key: 'feelings' | 'topics' | 'activities' | 'people') => {
     const map = new Map<string, { n: number; moods: number[] }>();
     for (const e of entries)
       for (const t of e[key] ?? []) {
-        if (t === 'Not sure') continue;
+        if (t === 'Not sure' || t === 'No one') continue;
         const rec = map.get(t) ?? { n: 0, moods: [] };
         rec.n++;
         if (e.mood) rec.moods.push(e.mood);
@@ -142,7 +144,7 @@ export function summarize(all: Entry[], range: Range, offset = 0, now = new Date
 
   // Mon..Sun
   const wd: number[][] = Array.from({ length: 7 }, () => []);
-  for (const e of entries) if (e.mood) wd[(new Date(e.createdAt).getDay() + 6) % 7].push(e.mood);
+  for (const e of entries) if (e.mood) wd[(new Date(entryTime(e)).getDay() + 6) % 7].push(e.mood);
   const monday = new Date(2024, 0, 1); // a Monday
   const weekdays = wd.map((xs, i) => ({
     label: new Date(monday.getTime() + i * DAY).toLocaleDateString(undefined, { weekday: 'short' }),
@@ -156,7 +158,7 @@ export function summarize(all: Entry[], range: Range, offset = 0, now = new Date
   return {
     period,
     checkins: entries.length,
-    daysJournaled: new Set(entries.map((e) => dayKey(e.createdAt))).size,
+    daysJournaled: new Set(entries.map((e) => dayKey(entryTime(e)))).size,
     daysSoFar,
     avgMood: avg(moods(entries)),
     prevAvgMood: avg(moods(prevEntries)),
@@ -165,13 +167,15 @@ export function summarize(all: Entry[], range: Range, offset = 0, now = new Date
     buckets,
     feelings: count('feelings').map(({ name, n }) => ({ name, n })),
     topics: count('topics'),
+    activities: count('activities'),
+    people: count('people'),
     weekdays,
   };
 }
 
 /** Days in a row with at least one entry, ending today (or yesterday, if today is still empty). */
 export function currentStreak(all: Entry[], now = new Date()): number {
-  const days = new Set(all.map((e) => dayKey(e.createdAt)));
+  const days = new Set(all.map((e) => dayKey(entryTime(e))));
   let d = startOfDay(now);
   if (!days.has(dayKey(d.getTime()))) d = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
   let n = 0;

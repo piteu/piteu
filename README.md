@@ -9,9 +9,18 @@ It's built for people who find writing hard.
 - **Sentence starters.** Tap "It started when…" and finish the sentence.
 - **Ask me differently.** Swaps any question for an easier one.
 - **One gentle nudge.** After a very short answer it may ask for a bit more, at most once per check-in. You can turn this off.
-- **Five check-ins:** Quick check-in (1 min), End of day, Something's on my mind (untangle a worry), Three good things, and Just write (with a daily prompt).
+- **Six check-ins:** Quick check-in (1 min), What I did, End of day, Something's on my mind (untangle a worry), Three good things, and Just write (with a daily prompt).
 
 The questions live in [`src/flows.ts`](src/flows.ts). They're plain text, easy to change or add to.
+
+## Remembering what you did, and when
+- **What I did** check-in: tap what you did and who you saw, then optionally add one detail. Your own activities and people become one-tap options.
+- **Fill in yesterday**: if a day wasn't logged, the app offers to catch up the next morning, and the entry is filed under the right day.
+- **Memory tab**:
+  - *Calendar*: tap any day to see what you did, who with, and what you wrote. *On this day* shows a week, a month and a year ago.
+  - *When did I last…*: e.g. "Saw Rita: 12 days ago · 9 times · about every 5 days".
+  - *Practice*: picks a recent day and asks what you did. Tap what you remember, then see what you logged. Trying to recall before checking helps memories stick.
+- **Daily reminder** (Settings): adds a repeating event to your phone's calendar. No server, and nothing from your journal is in it.
 
 ## Insights
 The Insights tab shows how things change over a **week, month or year**, and you can step back to earlier periods:

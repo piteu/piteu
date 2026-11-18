@@ -20,6 +20,8 @@ export type Answers = Record<string, string | string[] | number | undefined>;
 export interface Ctx {
   answers: Answers;
   name?: string;
+  /** Activities and people from your past entries, most used first. */
+  known?: { activities: string[]; people: string[] };
 }
 type T = string | ((c: Ctx) => string);
 type L = string[] | ((c: Ctx) => string[]);
@@ -28,7 +30,7 @@ type When = (c: Ctx) => boolean;
 export type Step =
   | { kind: 'say'; text: T; when?: When }
   | { kind: 'mood'; id: string; text: T; when?: When }
-  | { kind: 'choice'; id: string; text: T; options: L; multi?: boolean; when?: When }
+  | { kind: 'choice'; id: string; text: T; options: L; multi?: boolean; other?: string; when?: When }
   | { kind: 'write'; id: string; text: T; starters?: L; easier?: T; nudge?: T; when?: When };
 
 export interface Flow {
@@ -69,6 +71,37 @@ export const HIGH_FEELINGS = [
 export const TOPICS = [
   'Work', 'Study', 'Family', 'Friends', 'Partner', 'Health',
   'Sleep', 'Money', 'Home', 'Myself', 'The news', 'Not sure',
+];
+
+// Emoji make these quicker to recognise at a glance.
+export const ACTIVITIES = [
+  '💼 Work', '📚 Study', '🏃 Exercise', '🚶 Walk', '🍳 Cooked', '🍽️ Ate out', '🛒 Shopping',
+  '🧹 Chores', '🧾 Errands', '👫 Saw friends', '👨‍👩‍👧 Family time', '📞 Called someone', '❤️ Date',
+  '🩺 Doctor / health', '🎨 Hobby', '📖 Read', '📺 Watched something', '🎮 Games', '🚌 Travelled',
+  '🎉 Went out', '😴 Rested',
+];
+export const NO_ONE = 'No one';
+
+/** Your own activities first (most used), then the rest of the defaults. */
+export const activityOptions = (c: Ctx) => [...new Set([...(c.known?.activities ?? []), ...ACTIVITIES])];
+export const peopleOptions = (c: Ctx) => [...(c.known?.people ?? []).slice(0, 15), NO_ONE];
+
+const dayWord = (c: Ctx) => {
+  const d = c.answers.day;
+  return d === 'Yesterday' ? 'yesterday' : d === '2 days ago' ? 'that day' : 'today';
+};
+
+const activitySteps: Step[] = [
+  {
+    kind: 'choice', id: 'activities', multi: true, other: 'Add something else',
+    text: (c) => `What did you do ${dayWord(c)}? Tap everything that fits.`,
+    options: activityOptions,
+  },
+  {
+    kind: 'choice', id: 'people', multi: true, other: 'Add a name',
+    text: (c) => (c.known?.people.length ? `Who did you see or talk to?` : 'Who did you see or talk to? Add their names — next time they’ll be here to tap.'),
+    options: peopleOptions,
+  },
 ];
 
 const feelingsFor = (c: Ctx) => (low(c) ? LOW_FEELINGS : high(c) ? HIGH_FEELINGS : MID_FEELINGS);
@@ -152,6 +185,7 @@ const evening: Flow = {
   minutes: 3,
   steps: [
     { kind: 'mood', id: 'mood', text: 'How was today, overall?' },
+    ...activitySteps,
     {
       kind: 'write', id: 'title',
       text: 'If today had a title, what would it be?',
@@ -314,7 +348,26 @@ const free: Flow = {
   ],
 };
 
-export const FLOWS: Flow[] = [quick, evening, mind, gratitude, free];
+const log: Flow = {
+  id: 'log',
+  title: 'What I did',
+  blurb: 'Tap what you did and who you saw, so you can look it up later.',
+  minutes: 1,
+  steps: [
+    { kind: 'choice', id: 'day', text: 'Which day is this about?', options: ['Today', 'Yesterday', '2 days ago'], when: (c) => !c.answers.day },
+    ...activitySteps,
+    {
+      kind: 'write', id: 'details',
+      text: 'What’s one thing you’d like to remember? What you ate, what you talked about, something funny…',
+      starters: ['I want to remember…', 'We talked about…', 'The funniest part was…', 'I ate…'],
+      easier: (c) => `Let’s walk through it. What’s the first thing you remember doing ${dayWord(c)}?`,
+      nudge: 'Where were you, and what happened next?',
+    },
+    { kind: 'say', text: 'Saved. You can find it later in Memory — for example under “When did I last…”.' },
+  ],
+};
+
+export const FLOWS: Flow[] = [quick, log, evening, mind, gratitude, free];
 export const flowById = (id: string) => FLOWS.find((f) => f.id === id) ?? quick;
 
 /** Suggest a flow based on time of day. */

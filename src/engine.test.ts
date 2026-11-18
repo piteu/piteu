@@ -39,6 +39,8 @@ describe('engine', () => {
   it('evening flow only asks about the hard moment when there was one', () => {
     let o = start('evening');
     o = answer(o.session, 3);
+    o = answer(o.session, null); // activities
+    o = answer(o.session, null); // people
     o = answer(o.session, null);
     o = answer(o.session, null);
     o = answer(o.session, null);
@@ -61,5 +63,21 @@ describe('engine', () => {
   it('formats answers', () => {
     expect(displayAnswer({ kind: 'mood', id: 'mood', stepIndex: 0, text: '' }, 4)).toBe('🙂 Good');
     expect(displayAnswer({ kind: 'choice', id: 'x', stepIndex: 0, text: '' }, ['A', 'B'])).toBe('A, B');
+  });
+});
+
+describe('what I did', () => {
+  it('offers your own activities and people, and skips the day question when preset', () => {
+    const known = { activities: ['Climbing'], people: ['Rita'] };
+    let o = start('log', { known }, { day: 'Yesterday' });
+    expect(o.session.current?.id).toBe('activities');
+    expect(o.said[0]).toContain('yesterday');
+    expect(o.session.current?.options?.[0]).toBe('Climbing');
+    expect(o.session.current?.other).toBeTruthy();
+    o = answer(o.session, ['Climbing'], { known });
+    expect(o.session.current?.options).toEqual(['Rita', 'No one']);
+  });
+  it('asks which day when not preset', () => {
+    expect(start('log').session.current?.id).toBe('day');
   });
 });
