@@ -57,10 +57,9 @@ Once deployed (below), open the site on your phone, then:
 Installing it matters on iPhone: Safari may clear data from websites you haven't visited in a while, but not from home-screen apps.
 
 ## Deploy (free, GitHub Pages)
-1. In the repo: **Settings → Pages → Source: Deploy from a branch → `gh-pages` / (root)**.
-2. The workflow in `.github/workflows/deploy.yml` tests and builds the app on every push to `main` and puts the result on the `gh-pages` branch.
-
-The address follows the repository name (`…github.io/piteu`). To get `…github.io/bruna` instead, rename the repository on GitHub (Settings → General → Repository name) before installing it on your phone.
+1. In the repo: **Settings → Pages → Source: GitHub Actions**.
+2. The workflow in `.github/workflows/deploy.yml` tests, builds and publishes the app on every push to `main`.
+3. Phones notice the new version when Bruna opens and show **Atualizar**.
 
 ## Develop
 ```sh
