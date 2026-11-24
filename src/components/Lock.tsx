@@ -20,9 +20,9 @@ export default function Lock({ ring, onUnlock }: { ring: Keyring; onUnlock: (k: 
   return (
     <form className="page narrow lock" onSubmit={submit}>
       <div className="logo" aria-hidden>🔒</div>
-      <h1>Welcome back</h1>
+      <h1>Olá de novo</h1>
       <label className="field">
-        <span>Passphrase</span>
+        <span>Palavra-passe</span>
         <input
           type="password"
           value={p}
@@ -31,9 +31,9 @@ export default function Lock({ ring, onUnlock }: { ring: Keyring; onUnlock: (k: 
           autoComplete="current-password"
         />
       </label>
-      {wrong && <p className="warn">That’s not it. Try again.</p>}
+      {wrong && <p className="warn">Não é essa. Tenta outra vez.</p>}
       <button className="primary" disabled={busy || !p}>
-        {busy ? 'Unlocking…' : 'Unlock'}
+        {busy ? 'A desbloquear…' : 'Desbloquear'}
       </button>
     </form>
   );

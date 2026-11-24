@@ -2,6 +2,7 @@ import { openDB, type IDBPDatabase } from 'idb';
 import { type Keyring, type Sealed, seal, unseal, openKeyring } from './crypto';
 import type { Entry, Settings } from './types';
 import { DEFAULT_SETTINGS } from './types';
+import { migrateEntry } from './legacy';
 
 // Everything lives in this browser's IndexedDB, on this device only.
 // Only the entry id and a timestamp are stored unencrypted (needed for sorting).
@@ -67,7 +68,7 @@ export async function listEntries(key: CryptoKey): Promise<Entry[]> {
   const out: Entry[] = [];
   for (const r of recs) {
     try {
-      out.push(await unseal<Entry>(key, r.sealed));
+      out.push(migrateEntry(await unseal<Entry>(key, r.sealed)));
     } catch {
       // Unreadable record (e.g. from a different key) — skip rather than crash.
     }
@@ -94,7 +95,7 @@ export interface Backup {
 export async function makeBackup(): Promise<Backup> {
   const d = await db();
   const keyring = await getKeyring();
-  if (!keyring) throw new Error('No data yet');
+  if (!keyring) throw new Error('Ainda não há dados.');
   return { app: 'bruna', version: 1, exportedAt: Date.now(), keyring, entries: await d.getAll('entries') };
 }
 
@@ -103,7 +104,7 @@ export async function makeBackup(): Promise<Backup> {
  * Returns the number of entries imported, or null if the passphrase was wrong.
  */
 export async function restoreBackup(key: CryptoKey, backup: Backup, passphrase?: string): Promise<number | null> {
-  if (backup.app !== 'bruna' || backup.version !== 1) throw new Error('This is not a Bruna backup file.');
+  if (backup.app !== 'bruna' || backup.version !== 1) throw new Error('Isto não é um ficheiro de cópia de segurança da Bruna.');
   const backupKey = await openKeyring(backup.keyring, passphrase);
   if (!backupKey) return null;
   let n = 0;

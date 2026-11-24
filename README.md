@@ -1,5 +1,7 @@
 # Bruna — a private journal that feels like a chat
 
+Bruna speaks **European Portuguese** (pt-PT, informal “tu”). All wording lives in `src/flows.ts` (check-ins), `src/details.ts` (follow-up questions and the day summary), `scripts/notify/schedule.mjs` (notifications) and the screens in `src/components/`. Entries written while the app was in English are translated when read (`src/legacy.ts`).
+
 Bruna asks you short, kind questions and you answer by tapping, writing a few words, or skipping.
 It's built for people who find writing hard.
 

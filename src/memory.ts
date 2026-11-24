@@ -14,13 +14,14 @@ export const daysBetween = (a: number, b: number) => Math.round((startOfDay(b) -
 
 export function relativeDay(ts: number, now = Date.now()): string {
   const n = daysBetween(ts, now);
-  if (n <= 0) return 'Today';
-  if (n === 1) return 'Yesterday';
-  if (n < 14) return `${n} days ago`;
-  if (n < 60) return `${Math.round(n / 7)} weeks ago`;
-  if (n < 365) return `${Math.round(n / 30)} months ago`;
+  if (n <= 0) return 'Hoje';
+  if (n === 1) return 'Ontem';
+  if (n === 2) return 'Anteontem';
+  if (n < 14) return `Há ${n} dias`;
+  if (n < 60) return `Há ${Math.round(n / 7)} semanas`;
+  if (n < 365) return `Há ${Math.round(n / 30)} meses`;
   const y = Math.round(n / 365);
-  return y === 1 ? 'A year ago' : `${y} years ago`;
+  return y === 1 ? 'Há um ano' : `Há ${y} anos`;
 }
 
 const people = (e: Entry) => (e.people ?? []).filter((p) => p !== NO_ONE);
@@ -98,9 +99,9 @@ export function yesterdayMissing(entries: Entry[], now = Date.now()): boolean {
 export function onThisDay(entries: Entry[], now = new Date()): { label: string; day: Day }[] {
   const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
   const targets = [
-    { label: 'A week ago', ts: new Date(y, m, d - 7, 12).getTime() },
-    { label: 'A month ago', ts: new Date(y, m - 1, d, 12).getTime() },
-    { label: 'A year ago', ts: new Date(y - 1, m, d, 12).getTime() },
+    { label: 'Há uma semana', ts: new Date(y, m, d - 7, 12).getTime() },
+    { label: 'Há um mês', ts: new Date(y, m - 1, d, 12).getTime() },
+    { label: 'Há um ano', ts: new Date(y - 1, m, d, 12).getTime() },
   ];
   return targets
     .map((t) => ({ label: t.label, day: dayDetails(entries, t.ts) }))

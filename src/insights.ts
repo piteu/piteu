@@ -1,4 +1,6 @@
+import { LOCALE } from './locale';
 import { dayKey, writtenTexts } from './export';
+import { NO_ONE, NOT_SURE } from './flows';
 import { type Entry, entryTime } from './types';
 
 export type Range = 'week' | 'month' | 'year';
@@ -47,18 +49,18 @@ export function getPeriod(range: Range, offset = 0, now = new Date()): Period {
       buckets.push(
         dayBucket(
           d,
-          d.toLocaleDateString(undefined, { weekday: 'narrow' }),
-          d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' }),
+          d.toLocaleDateString(LOCALE, { weekday: 'narrow' }),
+          d.toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'short' }),
         ),
       );
     }
     const last = new Date(end.getTime() - DAY);
     label =
       offset === 0
-        ? 'This week'
+        ? 'Esta semana'
         : offset === -1
-          ? 'Last week'
-          : `${start.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${last.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+          ? 'Semana passada'
+          : `${start.toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' })} – ${last.toLocaleDateString(LOCALE, { day: 'numeric', month: 'short', year: 'numeric' })}`;
   } else if (range === 'month') {
     start = new Date(today.getFullYear(), today.getMonth() + offset, 1);
     end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
@@ -66,10 +68,10 @@ export function getPeriod(range: Range, offset = 0, now = new Date()): Period {
     for (let i = 0; i < days; i++) {
       const d = new Date(start.getFullYear(), start.getMonth(), i + 1);
       buckets.push(
-        dayBucket(d, String(i + 1), d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' })),
+        dayBucket(d, String(i + 1), d.toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'short' })),
       );
     }
-    label = start.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    label = start.toLocaleDateString(LOCALE, { month: 'long', year: 'numeric' });
   } else {
     start = new Date(today.getFullYear() + offset, 0, 1);
     end = new Date(start.getFullYear() + 1, 0, 1);
@@ -79,8 +81,8 @@ export function getPeriod(range: Range, offset = 0, now = new Date()): Period {
       buckets.push({
         start: s.getTime(),
         end: e.getTime(),
-        short: s.toLocaleDateString(undefined, { month: 'narrow' }),
-        long: s.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+        short: s.toLocaleDateString(LOCALE, { month: 'narrow' }),
+        long: s.toLocaleDateString(LOCALE, { month: 'long', year: 'numeric' }),
         n: 0,
         future: s > today,
       });
@@ -131,7 +133,7 @@ export function summarize(all: Entry[], range: Range, offset = 0, now = new Date
     const map = new Map<string, { n: number; moods: number[] }>();
     for (const e of entries)
       for (const t of e[key] ?? []) {
-        if (t === 'Not sure' || t === 'No one') continue;
+        if (t === NOT_SURE || t === NO_ONE) continue;
         const rec = map.get(t) ?? { n: 0, moods: [] };
         rec.n++;
         if (e.mood) rec.moods.push(e.mood);
@@ -147,7 +149,7 @@ export function summarize(all: Entry[], range: Range, offset = 0, now = new Date
   for (const e of entries) if (e.mood) wd[(new Date(entryTime(e)).getDay() + 6) % 7].push(e.mood);
   const monday = new Date(2024, 0, 1); // a Monday
   const weekdays = wd.map((xs, i) => ({
-    label: new Date(monday.getTime() + i * DAY).toLocaleDateString(undefined, { weekday: 'short' }),
+    label: new Date(monday.getTime() + i * DAY).toLocaleDateString(LOCALE, { weekday: 'short' }),
     avg: avg(xs),
     n: xs.length,
   }));

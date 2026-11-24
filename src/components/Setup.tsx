@@ -29,20 +29,20 @@ export default function Setup({ onDone }: { onDone: (key: CryptoKey) => void }) 
     return (
       <div className="page narrow setup">
         <div className="logo" aria-hidden>💬</div>
-        <h1>Hi, I’m Bruna.</h1>
+        <h1>Olá, sou a Bruna.</h1>
         <p>
-          A private journal that works like a chat. I’ll ask you short questions — you can tap, write a few words, or
-          skip. No essays needed.
+          Um diário privado que funciona como uma conversa. Faço-te perguntas curtas — podes tocar, escrever umas
+          palavras, ou saltar. Não é preciso escrever textos longos.
         </p>
         <p className="muted small">
-          Everything stays on this device. No account, no server, no tracking.
+          Tudo fica neste dispositivo. Sem conta, sem servidor, sem rastreio.
         </p>
         <label className="field">
-          <span>What should I call you? (optional)</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" autoComplete="given-name" />
+          <span>Como queres que te chame? (opcional)</span>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="O teu nome" autoComplete="given-name" />
         </label>
         <button className="primary" onClick={() => setStep('lock')}>
-          Continue
+          Continuar
         </button>
       </div>
     );
@@ -54,33 +54,33 @@ export default function Setup({ onDone }: { onDone: (key: CryptoKey) => void }) 
 
   return (
     <div className="page narrow setup">
-      <h1>Lock your journal</h1>
+      <h1>Tranca o teu diário</h1>
       <p>
-        With a passphrase, your entries are encrypted. Even someone holding your unlocked phone can’t read them without
-        it.
+        Com uma palavra-passe, os teus registos ficam cifrados. Mesmo alguém com o teu telemóvel desbloqueado não os
+        consegue ler sem ela.
       </p>
       <label className="field">
-        <span>Passphrase</span>
+        <span>Palavra-passe</span>
         <input type="password" value={p1} onChange={(e) => setP1(e.target.value)} autoComplete="new-password" />
-        {tooShort && <small className="warn">At least 6 characters. A short sentence is easiest to remember.</small>}
+        {tooShort && <small className="warn">Pelo menos 6 caracteres. Uma frase curta é o mais fácil de lembrar.</small>}
       </label>
       <label className="field">
-        <span>Type it again</span>
+        <span>Escreve outra vez</span>
         <input type="password" value={p2} onChange={(e) => setP2(e.target.value)} autoComplete="new-password" />
-        {mismatch && <small className="warn">These don’t match yet.</small>}
+        {mismatch && <small className="warn">Ainda não são iguais.</small>}
       </label>
       <label className="check">
         <input type="checkbox" checked={understood} onChange={(e) => setUnderstood(e.target.checked)} />
         <span>
-          I understand that <b>if I forget my passphrase, my entries can’t be recovered</b> — by anyone.
+          Percebo que <b>se me esquecer da palavra-passe, os meus registos não podem ser recuperados</b> — por ninguém.
         </span>
       </label>
       {err && <p className="warn">{err}</p>}
       <button className="primary" disabled={!canSet} onClick={() => finish(p1)}>
-        {busy ? 'Setting up…' : 'Lock with passphrase'}
+        {busy ? 'A preparar…' : 'Trancar com palavra-passe'}
       </button>
       <button className="link" disabled={busy} onClick={() => finish(null)}>
-        Skip for now (you can add one later in Settings)
+        Saltar por agora (podes definir uma mais tarde nas Definições)
       </button>
     </div>
   );

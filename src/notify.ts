@@ -18,10 +18,10 @@ export interface PushSettings {
 export const DEFAULT_AT: Record<Kind, number | null> = { evening: 21, morning: null, weekly: 18, practice: null };
 
 export const KIND_INFO: { kind: Kind; label: string; when: string }[] = [
-  { kind: 'evening', label: 'Evening check-in', when: 'every day' },
-  { kind: 'morning', label: '“Anything to add about yesterday?”', when: 'every morning' },
-  { kind: 'weekly', label: 'Look back at your week', when: 'Sundays' },
-  { kind: 'practice', label: 'Memory practice', when: 'Tue, Thu and Sat' },
+  { kind: 'evening', label: 'Check-in da noite', when: 'todos os dias' },
+  { kind: 'morning', label: '“Queres acrescentar algo sobre ontem?”', when: 'todas as manhãs' },
+  { kind: 'weekly', label: 'Olhar para a tua semana', when: 'aos domingos' },
+  { kind: 'practice', label: 'Treino de memória', when: 'ter., qui. e sáb.' },
 ];
 
 const b64u = (buf: ArrayBuffer | Uint8Array) => {
@@ -57,8 +57,8 @@ export async function turnOn(at: Record<Kind, number | null>, existing?: PushSet
   if (permission !== 'granted') {
     throw new Error(
       permission === 'denied'
-        ? 'Notifications are blocked for Bruna. Allow them in your phone’s Settings → Notifications → Bruna, then try again.'
-        : 'Notifications weren’t allowed.',
+        ? 'As notificações estão bloqueadas para a Bruna. Permite-as nas Definições do telemóvel → Notificações → Bruna, e tenta outra vez.'
+        : 'As notificações não foram permitidas.',
     );
   }
   const reg = await navigator.serviceWorker.ready;

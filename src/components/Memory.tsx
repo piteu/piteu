@@ -1,3 +1,4 @@
+import { LOCALE } from '../locale';
 import { useEffect, useMemo, useState } from 'react';
 import { listEntries } from '../db';
 import { dayKey, formatTime, moodFace } from '../export';
@@ -9,9 +10,11 @@ import { daySummary } from '../details';
 type View = 'calendar' | 'last' | 'practice';
 
 const longDate = (ts: number) =>
-  new Date(ts).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+  new Date(ts).toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' });
 const shortDate = (ts: number) =>
-  new Date(ts).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  new Date(ts).toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' });
+/** "na terça-feira, 17 de novembro" / "no sábado, 21 de novembro" (weekend days are masculine). */
+const onDay = (ts: number) => `${[0, 6].includes(new Date(ts).getDay()) ? 'no' : 'na'} ${longDate(ts)}`;
 const avgMood = (ms: number[]) => (ms.length ? Math.round(ms.reduce((a, b) => a + b, 0) / ms.length) : 0);
 
 export default function Memory({ dataKey, initialView = 'calendar' }: { dataKey: CryptoKey; initialView?: View }) {
@@ -23,7 +26,7 @@ export default function Memory({ dataKey, initialView = 'calendar' }: { dataKey:
     listEntries(dataKey).then(setEntries);
   }, [dataKey]);
 
-  if (!entries) return <div className="center muted">Opening your memories…</div>;
+  if (!entries) return <div className="center muted">A abrir as tuas memórias…</div>;
 
   if (openDay !== null) {
     return <DayView day={dayDetails(entries, openDay)} onBack={() => setOpenDay(null)} />;
@@ -31,13 +34,13 @@ export default function Memory({ dataKey, initialView = 'calendar' }: { dataKey:
 
   return (
     <div className="page memory">
-      <h1>Memory</h1>
-      <div className="segmented" role="tablist" aria-label="Memory views">
+      <h1>Memória</h1>
+      <div className="segmented" role="tablist" aria-label="Vistas da memória">
         {(
           [
-            ['calendar', 'Calendar'],
-            ['last', 'When did I last…'],
-            ['practice', 'Practice'],
+            ['calendar', 'Calendário'],
+            ['last', 'Última vez…'],
+            ['practice', 'Treino'],
           ] as [View, string][]
         ).map(([v, label]) => (
           <button key={v} role="tab" aria-selected={view === v} className={view === v ? 'on' : ''} onClick={() => setView(v)}>
@@ -68,11 +71,11 @@ function Chips({ items, className = '' }: { items: string[]; className?: string 
 }
 
 function DaySummary({ day }: { day: Day }) {
-  if (!day.entries.length) return <p className="muted small">Nothing logged.</p>;
+  if (!day.entries.length) return <p className="muted small">Nada registado.</p>;
   return (
     <>
       {day.activities.length > 0 && <Chips items={day.activities} />}
-      {day.people.length > 0 && <p className="small with">With {day.people.join(', ')}</p>}
+      {day.people.length > 0 && <p className="small with">Com {day.people.join(', ')}</p>}
       {(day.details[0]?.text ?? day.notes[0]) && <p className="small quote">“{day.details[0]?.text ?? day.notes[0]}”</p>}
     </>
   );
@@ -83,7 +86,7 @@ function DayView({ day, onBack }: { day: Day; onBack: () => void }) {
   return (
     <div className="page">
       <button className="link back" onClick={onBack}>
-        ← Memory
+        ← Memória
       </button>
       <h1>{longDate(day.ts)}</h1>
       <p className="muted">
@@ -91,24 +94,24 @@ function DayView({ day, onBack }: { day: Day; onBack: () => void }) {
         {mood ? ` · ${moodFace(mood)} ${MOODS[mood - 1].label}` : ''}
       </p>
 
-      {!day.entries.length && <p className="muted">Nothing was logged on this day.</p>}
+      {!day.entries.length && <p className="muted">Não registaste nada neste dia.</p>}
 
       {day.activities.length > 0 && (
         <section>
-          <h2>What you did</h2>
+          <h2>O que fizeste</h2>
           <ItemList items={day.activities} day={day} />
         </section>
       )}
       {day.people.length > 0 && (
         <section>
-          <h2>Who you saw or talked to</h2>
+          <h2>Com quem estiveste ou falaste</h2>
           <ItemList items={day.people} day={day} />
         </section>
       )}
       <TellSomeone day={day} />
       {day.notes.length > 0 && (
         <section>
-          <h2>What you wrote</h2>
+          <h2>O que escreveste</h2>
           {day.notes.map((n, i) => (
             <blockquote key={i} className="note-quote">
               {n}
@@ -125,12 +128,12 @@ function DayView({ day, onBack }: { day: Day; onBack: () => void }) {
                 {moodFace(e.mood)} {e.flowTitle}
                 <span className="muted">
                   {' '}
-                  · written {dayKey(e.createdAt) === dayKey(day.ts) ? `at ${formatTime(e.createdAt)}` : `on ${shortDate(e.createdAt)}`}
+                  · escrito {dayKey(e.createdAt) === dayKey(day.ts) ? `às ${formatTime(e.createdAt)}` : `em ${shortDate(e.createdAt)}`}
                 </span>
               </li>
             ))}
           </ul>
-          <p className="muted small">Read the full conversations in the Journal tab.</p>
+          <p className="muted small">Lê as conversas completas no separador Diário.</p>
         </section>
       )}
     </div>
@@ -166,7 +169,7 @@ function TellSomeone({ day }: { day: Day }) {
   const canShare = typeof navigator.share === 'function';
   return (
     <section className="card tell">
-      <h2>Tell someone about this day</h2>
+      <h2>Contar a alguém sobre este dia</h2>
       <p className="tell-text">{text}</p>
       <div className="row">
         {canShare && (
@@ -174,7 +177,7 @@ function TellSomeone({ day }: { day: Day }) {
             className="primary small"
             onClick={() => navigator.share({ text }).catch(() => {})}
           >
-            Share…
+            Partilhar…
           </button>
         )}
         <button
@@ -182,17 +185,17 @@ function TellSomeone({ day }: { day: Day }) {
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(text);
-              setDone('Copied — paste it into a message.');
+              setDone('Copiado — cola numa mensagem.');
             } catch {
-              setDone('Couldn’t copy. You can select the text and copy it.');
+              setDone('Não foi possível copiar. Podes selecionar o texto e copiá-lo.');
             }
           }}
         >
-          Copy text
+          Copiar texto
         </button>
       </div>
       {done && <p className="muted small">{done}</p>}
-      <p className="muted small">Only shared if you choose to — nothing is sent automatically.</p>
+      <p className="muted small">Só é partilhado se quiseres — nada é enviado automaticamente.</p>
     </section>
   );
 }
@@ -218,14 +221,14 @@ function CalendarView({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: numb
   }, [entries, offset]);
 
   const weekdays = Array.from({ length: 7 }, (_, i) =>
-    new Date(2024, 0, 1 + i).toLocaleDateString(undefined, { weekday: 'narrow' }),
+    new Date(2024, 0, 1 + i).toLocaleDateString(LOCALE, { weekday: 'narrow' }),
   );
 
   return (
     <>
       {memories.length > 0 && (
         <section>
-          <h2>On this day</h2>
+          <h2>Neste dia</h2>
           {memories.map((m) => (
             <button key={m.label} className="memory-card" onClick={() => onOpen(m.day.ts)}>
               <span className="memory-when">
@@ -239,16 +242,16 @@ function CalendarView({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: numb
       )}
 
       <div className="periodnav">
-        <button className="link" onClick={() => setOffset((o) => o - 1)} aria-label="Previous month">
+        <button className="link" onClick={() => setOffset((o) => o - 1)} aria-label="Mês anterior">
           ‹
         </button>
-        <span>{first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</span>
-        <button className="link" onClick={() => setOffset((o) => o + 1)} disabled={offset >= 0} aria-label="Next month">
+        <span>{first.toLocaleDateString(LOCALE, { month: 'long', year: 'numeric' })}</span>
+        <button className="link" onClick={() => setOffset((o) => o + 1)} disabled={offset >= 0} aria-label="Mês seguinte">
           ›
         </button>
       </div>
 
-      <div className="cal" role="grid" aria-label="Calendar">
+      <div className="cal" role="grid" aria-label="Calendário">
         {weekdays.map((w, i) => (
           <span key={i} className="cal-head" aria-hidden>
             {w}
@@ -263,8 +266,8 @@ function CalendarView({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: numb
           const future = ts > Date.now() && dayKey(ts) !== todayKey;
           const label = `${longDate(ts)}: ${
             day.entries.length
-              ? `${mood ? MOODS[mood - 1].label + ' mood, ' : ''}${logged} things logged`
-              : 'nothing logged'
+              ? `${mood ? 'humor ' + MOODS[mood - 1].label.toLowerCase() + ', ' : ''}${logged} coisas registadas`
+              : 'nada registado'
           }`;
           return (
             <button
@@ -287,15 +290,19 @@ function CalendarView({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: numb
           </span>
         ))}
         <span>
-          <span className="cal-dot inline" /> things logged
+          <span className="cal-dot inline" /> coisas registadas
         </span>
       </div>
-      <p className="muted small">Tap a day to see what you did.</p>
+      <p className="muted small">Toca num dia para ver o que fizeste.</p>
     </>
   );
 }
 
 // ---------------------------------------------------------------------------
+
+/** Average number of days between times something happened. */
+const everyDays = (t: Thing) =>
+  Math.max(1, Math.round((t.days[0] - t.days[t.days.length - 1]) / 86_400_000 / (t.days.length - 1)));
 
 function LastTime({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: number) => void }) {
   const [q, setQ] = useState('');
@@ -307,8 +314,8 @@ function LastTime({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: number) 
   if (!all.length) {
     return (
       <p className="muted empty">
-        Nothing to look up yet. Use the <b>What I did</b> check-in on the Today tab, and you’ll be able to see when you last
-        did something or saw someone.
+        Ainda não há nada para consultar. Usa o check-in <b>O que fiz</b> no separador Hoje, e vais poder ver quando foi a
+        última vez que fizeste uma coisa ou estiveste com alguém.
       </p>
     );
   }
@@ -322,16 +329,16 @@ function LastTime({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: number) 
       <input
         className="search"
         type="search"
-        placeholder="Search, e.g. “dentist” or a name"
+        placeholder="Pesquisa, p. ex. “médico” ou um nome"
         value={q}
         onChange={(e) => setQ(e.target.value)}
       />
       <div className="chips filter">
         {(
           [
-            ['all', 'Everything'],
-            ['activity', 'Things I did'],
-            ['person', 'People'],
+            ['all', 'Tudo'],
+            ['activity', 'O que fiz'],
+            ['person', 'Pessoas'],
           ] as const
         ).map(([k, label]) => (
           <button key={k} className={`chip ${kind === k ? 'on' : ''}`} onClick={() => setKind(k)} aria-pressed={kind === k}>
@@ -339,7 +346,7 @@ function LastTime({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: number) 
           </button>
         ))}
       </div>
-      {list.length === 0 && <p className="muted">Nothing matches “{q}”.</p>}
+      {list.length === 0 && <p className="muted">Nada corresponde a “{q}”.</p>}
       <ul className="last-list">
         {shown.map((t) => {
           const k = `${t.kind}:${t.label}`;
@@ -353,7 +360,7 @@ function LastTime({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: number) 
                     {t.label}
                   </span>
                   <span className="last-when">
-                    Last: <b>{relativeDay(t.last)}</b> · {shortDate(t.last)}
+                    Última vez: <b>{relativeDay(t.last)}</b> · {shortDate(t.last)}
                   </span>
                 </span>
                 <span className="last-count">{t.days.length}×</span>
@@ -365,11 +372,10 @@ function LastTime({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: number) 
                       {shortDate(d)}
                     </button>
                   ))}
-                  {t.days.length > 20 && <span className="muted small">and {t.days.length - 20} more</span>}
+                  {t.days.length > 20 && <span className="muted small">e mais {t.days.length - 20}</span>}
                   {t.days.length > 1 && (
                     <p className="muted small gap">
-                      About every {Math.max(1, Math.round((t.days[0] - t.days[t.days.length - 1]) / 86_400_000 / (t.days.length - 1)))} days
-                      on average.
+                      Em média, de {everyDays(t)} em {everyDays(t)} dias.
                     </p>
                   )}
                 </div>
@@ -380,7 +386,7 @@ function LastTime({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: number) 
       </ul>
       {!showAll && !s && list.length > 12 && (
         <button className="secondary" onClick={() => setShowAll(true)}>
-          Show all {list.length}
+          Mostrar todos ({list.length})
         </button>
       )}
     </>
@@ -408,23 +414,23 @@ function Practice({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: number) 
   if (!quiz) {
     return (
       <section className="card practice-intro">
-        <h2>Memory practice</h2>
+        <h2>Treino de memória</h2>
         <p>
-          I’ll pick a day from the last few weeks and ask what you did. Tap what you remember, then see what you
-          logged.
+          Escolho um dia das últimas semanas e pergunto-te o que fizeste. Toca no que te lembras, e depois vê o que
+          registaste.
         </p>
         <p className="muted small">
-          Trying to remember first, then checking, is one of the most reliable ways to make memories stick. A minute a
-          day is plenty.
+          Tentar lembrar primeiro e só depois confirmar é uma das formas mais eficazes de fixar memórias. Um minuto por
+          dia chega.
         </p>
         {none && (
           <p className="warn small">
-            I need a few more days with things logged first. Use the <b>What I did</b> check-in for a couple of days,
-            then come back.
+            Primeiro preciso de mais alguns dias com coisas registadas. Usa o check-in <b>O que fiz</b> durante uns dias,
+            e depois volta cá.
           </p>
         )}
         <button className="primary" onClick={next}>
-          Start
+          Começar
         </button>
       </section>
     );
@@ -436,8 +442,8 @@ function Practice({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: number) 
   return (
     <section className="card practice">
       <h2>{relativeDay(quiz.day.ts)}</h2>
-      <p className="practice-q">What did you do on {longDate(quiz.day.ts)}?</p>
-      {!checked && <p className="muted small">Tap everything you remember — things you did and people you saw.</p>}
+      <p className="practice-q">O que fizeste {onDay(quiz.day.ts)}?</p>
+      {!checked && <p className="muted small">Toca em tudo o que te lembras — coisas que fizeste e pessoas com quem estiveste.</p>}
 
       <div className="chips">
         {quiz.options.map((o) => {
@@ -452,7 +458,7 @@ function Practice({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: number) 
                   ? 'wrong'
                   : 'dim';
           }
-          const sr = { got: ' (you remembered)', missed: ' (you did this)', wrong: ' (not that day)', dim: '', '': '' }[state];
+          const sr = { got: ' (lembraste-te)', missed: ' (fizeste isto)', wrong: ' (não foi nesse dia)', dim: '', '': '' }[state];
           return (
             <button
               key={o}
@@ -471,10 +477,10 @@ function Practice({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: number) 
 
       {!checked && hint && (
         <p className="small hint-text">
-          Hint: {mood ? `your mood was ${moodFace(mood)} ${MOODS[mood - 1].label.toLowerCase()}, and ` : ''}you logged{' '}
-          {quiz.actual.length} things that day.
+          Pista: {mood ? `o teu humor estava ${moodFace(mood)} ${MOODS[mood - 1].label.toLowerCase()}, e ` : ''}registaste{' '}
+          {quiz.actual.length} coisas nesse dia.
           {(quiz.day.details[0]?.text ?? quiz.day.notes[0])
-            ? ` You wrote something starting “${(quiz.day.details[0]?.text ?? quiz.day.notes[0]).split(/\s+/).slice(0, 3).join(' ')}…”`
+            ? ` Escreveste algo que começava por “${(quiz.day.details[0]?.text ?? quiz.day.notes[0]).split(/\s+/).slice(0, 3).join(' ')}…”`
             : ''}
         </p>
       )}
@@ -483,14 +489,14 @@ function Practice({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: number) 
         <div className="practice-result">
           <p>
             <b>
-              You remembered {result.remembered.length} of {quiz.actual.length}.
+              Lembraste-te de {result.remembered.length} de {quiz.actual.length}.
             </b>{' '}
             {result.remembered.length === quiz.actual.length
-              ? 'All of it — nice.'
+              ? 'De tudo — boa!'
               : result.remembered.length
-                ? 'Good recall. The ones marked + are what you forgot.'
-                : 'That’s okay — that’s exactly why you’re practising. Looking at it now helps it stick.'}
-            {result.wrong.length > 0 && ` Crossed-out ones were a different day.`}
+                ? 'Boa memória. As marcadas com + são as que esqueceste.'
+                : 'Não faz mal — é para isso mesmo que serve o treino. Olhar para isto agora ajuda a fixar.'}
+            {result.wrong.length > 0 && ` As riscadas foram noutro dia.`}
           </p>
           {[...quiz.day.details.map((d) => `${d.item}: ${d.text}`), ...quiz.day.notes].slice(0, 3).map((n, i) => (
             <blockquote key={i} className="note-quote">
@@ -504,21 +510,21 @@ function Practice({ entries, onOpen }: { entries: Entry[]; onOpen: (ts: number) 
         {!checked ? (
           <>
             <button className="primary" onClick={() => setChecked(true)}>
-              {picked.length ? 'Check' : 'I don’t remember — show me'}
+              {picked.length ? 'Confirmar' : 'Não me lembro — mostra-me'}
             </button>
             {!hint && (
               <button className="link" onClick={() => setHint(true)}>
-                Give me a hint
+                Dá-me uma pista
               </button>
             )}
           </>
         ) : (
           <>
             <button className="primary" onClick={next}>
-              Another day
+              Outro dia
             </button>
             <button className="link" onClick={() => onOpen(quiz.day.ts)}>
-              See the whole day
+              Ver o dia completo
             </button>
           </>
         )}

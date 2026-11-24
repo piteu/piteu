@@ -8,6 +8,13 @@ const moodNear = (v: number) => MOODS[Math.min(4, Math.max(0, Math.round(v) - 1)
 const fmtMood = (v: number) => `${moodNear(v).face} ${moodNear(v).label}`;
 const plural = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? one : many}`;
 
+// Portuguese needs different words around each range ("esta semana", "este mês").
+const R = {
+  week: { tab: 'Semana', this: 'esta semana', prevIn: 'na semana anterior', prevTo: 'à semana anterior', prev: 'Semana anterior', next: 'Semana seguinte' },
+  month: { tab: 'Mês', this: 'este mês', prevIn: 'no mês anterior', prevTo: 'ao mês anterior', prev: 'Mês anterior', next: 'Mês seguinte' },
+  year: { tab: 'Ano', this: 'este ano', prevIn: 'no ano anterior', prevTo: 'ao ano anterior', prev: 'Ano anterior', next: 'Ano seguinte' },
+} as const;
+
 export default function Insights({ dataKey }: { dataKey: CryptoKey }) {
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [range, setRange] = useState<Range>('week');
@@ -20,17 +27,17 @@ export default function Insights({ dataKey }: { dataKey: CryptoKey }) {
   const s = useMemo(() => (entries ? summarize(entries, range, offset) : null), [entries, range, offset]);
   const streak = useMemo(() => (entries ? currentStreak(entries) : 0), [entries]);
 
-  if (!entries || !s) return <div className="center muted">Working it out…</div>;
+  if (!entries || !s) return <div className="center muted">A fazer as contas…</div>;
 
-  const prevName = `previous ${range}`;
+  const w = R[range];
   const checkDelta = s.checkins - s.prevCheckins;
   const moodDelta = s.avgMood !== undefined && s.prevAvgMood !== undefined ? s.avgMood - s.prevAvgMood : undefined;
 
   return (
     <div className="page insights">
-      <h1>Insights</h1>
+      <h1>Resumo</h1>
 
-      <div className="segmented" role="tablist" aria-label="Time range">
+      <div className="segmented" role="tablist" aria-label="Período">
         {(['week', 'month', 'year'] as Range[]).map((r) => (
           <button
             key={r}
@@ -42,17 +49,17 @@ export default function Insights({ dataKey }: { dataKey: CryptoKey }) {
               setOffset(0);
             }}
           >
-            {r[0].toUpperCase() + r.slice(1)}
+            {R[r].tab}
           </button>
         ))}
       </div>
 
       <div className="periodnav">
-        <button className="link" onClick={() => setOffset((o) => o - 1)} aria-label={`Previous ${range}`}>
+        <button className="link" onClick={() => setOffset((o) => o - 1)} aria-label={w.prev}>
           ‹
         </button>
         <span>{s.period.label}</span>
-        <button className="link" onClick={() => setOffset((o) => o + 1)} disabled={offset >= 0} aria-label={`Next ${range}`}>
+        <button className="link" onClick={() => setOffset((o) => o + 1)} disabled={offset >= 0} aria-label={w.next}>
           ›
         </button>
       </div>
@@ -61,51 +68,51 @@ export default function Insights({ dataKey }: { dataKey: CryptoKey }) {
         <Tile
           label="Check-ins"
           value={String(s.checkins)}
-          delta={!s.prevCheckins ? undefined : checkDelta ? `${checkDelta > 0 ? '+' : '−'}${Math.abs(checkDelta)} vs ${prevName}` : `Same as ${prevName}`}
+          delta={!s.prevCheckins ? undefined : checkDelta ? `${checkDelta > 0 ? '+' : '−'}${Math.abs(checkDelta)} face ${w.prevTo}` : `Igual ${w.prevTo}`}
         />
-        <Tile label="Days journaled" value={String(s.daysJournaled)} delta={`of ${plural(s.daysSoFar, 'day')} so far`} />
+        <Tile label="Dias com registo" value={String(s.daysJournaled)} delta={`de ${plural(s.daysSoFar, 'dia')} até agora`} />
         <Tile
-          label="Average mood"
+          label="Humor médio"
           value={s.avgMood !== undefined ? fmtMood(s.avgMood) : '—'}
           delta={
             moodDelta === undefined
               ? s.avgMood !== undefined
-                ? `${s.avgMood.toFixed(1)} out of 5`
-                : 'No moods yet'
+                ? `${s.avgMood.toFixed(1).replace('.', ',')} em 5`
+                : 'Ainda sem humor registado'
               : Math.abs(moodDelta) < 0.25
-                ? `About the same as ${prevName}`
-                : `${moodDelta > 0 ? '↑ Brighter' : '↓ Lower'} than ${prevName}`
+                ? `Parecido ${w.prevTo}`
+                : `${moodDelta > 0 ? '↑ Melhor' : '↓ Pior'} do que ${w.prevIn}`
           }
         />
-        <Tile label="Current streak" value={plural(streak, 'day')} delta={streak ? 'Keep it going' : 'Start one today'} />
+        <Tile label="Dias seguidos" value={plural(streak, 'dia')} delta={streak ? 'Continua assim' : 'Começa hoje'} />
       </div>
 
       {s.checkins === 0 ? (
-        <p className="muted empty">No check-ins in this {range}. Try another one with the arrows above.</p>
+        <p className="muted empty">Sem check-ins {w.this}. Experimenta outro período com as setas acima.</p>
       ) : (
         <>
           <section className="card">
-            <h2>Mood</h2>
+            <h2>Humor</h2>
             <MoodChart buckets={s.buckets} range={range} avg={s.avgMood} />
           </section>
 
           {s.feelings.length > 0 && (
             <section className="card">
-              <h2>Feelings you picked most</h2>
+              <h2>Sentimentos que escolheste mais</h2>
               <Bars rows={s.feelings.slice(0, 6).map((f) => ({ label: f.name, n: f.n }))} />
             </section>
           )}
 
           {s.topics.length > 0 && (
             <section className="card">
-              <h2>What it was about</h2>
-              <p className="muted small hint">How often each came up, and your usual mood when it did.</p>
+              <h2>Sobre o que foi</h2>
+              <p className="muted small hint">Quantas vezes surgiu cada tema, e a carinha do teu humor habitual nessas alturas.</p>
               <Bars
                 rows={s.topics.slice(0, 6).map((t) => ({
                   label: t.name,
                   n: t.n,
-                  note: t.avg !== undefined ? `usually ${moodNear(t.avg).face}` : undefined,
-                  noteLabel: t.avg !== undefined ? `usually ${moodNear(t.avg).label}` : undefined,
+                  note: t.avg !== undefined ? moodNear(t.avg).face : undefined,
+                  noteLabel: t.avg !== undefined ? `normalmente ${moodNear(t.avg).label.toLowerCase()}` : undefined,
                 }))}
               />
             </section>
@@ -113,13 +120,14 @@ export default function Insights({ dataKey }: { dataKey: CryptoKey }) {
 
           {s.activities.length > 0 && (
             <section className="card">
-              <h2>What you did most</h2>
+              <h2>O que fizeste mais</h2>
+              <p className="muted small hint">Com a carinha do teu humor habitual nesses dias.</p>
               <Bars
                 rows={s.activities.slice(0, 6).map((t) => ({
                   label: t.name,
                   n: t.n,
-                  note: t.avg !== undefined ? `usually ${moodNear(t.avg).face}` : undefined,
-                  noteLabel: t.avg !== undefined ? `usually ${moodNear(t.avg).label}` : undefined,
+                  note: t.avg !== undefined ? moodNear(t.avg).face : undefined,
+                  noteLabel: t.avg !== undefined ? `normalmente ${moodNear(t.avg).label.toLowerCase()}` : undefined,
                 }))}
               />
             </section>
@@ -127,20 +135,20 @@ export default function Insights({ dataKey }: { dataKey: CryptoKey }) {
 
           {s.people.length > 0 && (
             <section className="card">
-              <h2>People you saw most</h2>
+              <h2>Com quem estiveste mais</h2>
               <Bars rows={s.people.slice(0, 6).map((t) => ({ label: t.name, n: t.n }))} />
             </section>
           )}
 
           {range !== 'week' && s.weekdays.filter((d) => d.n).length >= 3 && (
             <section className="card">
-              <h2>Mood by day of the week</h2>
+              <h2>Humor por dia da semana</h2>
               <Weekdays days={s.weekdays} />
             </section>
           )}
 
           {s.words > 0 && (
-            <p className="muted small center-text">You wrote {plural(s.words, 'word')} this {range}.</p>
+            <p className="muted small center-text">Escreveste {plural(s.words, 'palavra')} {w.this}.</p>
           )}
         </>
       )}
@@ -199,17 +207,17 @@ function MoodChart({ buckets, range, avg }: { buckets: Bucket[]; range: Range; a
   const readout = cur
     ? cur.avg !== undefined
       ? `${cur.long} · ${fmtMood(cur.avg)} · ${plural(cur.n, 'check-in')}`
-      : `${cur.long} · ${cur.future ? 'Not yet' : 'No mood recorded'}`
+      : `${cur.long} · ${cur.future ? 'Ainda não chegou' : 'Sem humor registado'}`
     : avg !== undefined
-      ? `Average ${fmtMood(avg)} · tap the chart for details`
-      : 'Tap the chart for details';
+      ? `Média ${fmtMood(avg)} · toca no gráfico para ver detalhes`
+      : 'Toca no gráfico para ver detalhes';
 
   return (
     <div ref={ref} className="moodchart">
       <p className="readout" aria-live="polite">
         {readout}
       </p>
-      <svg width={width} height={H} role="img" aria-label="Mood over time">
+      <svg width={width} height={H} role="img" aria-label="Humor ao longo do tempo">
         {MOODS.map((m) => (
           <g key={m.value}>
             <line x1={pad.l} x2={width - pad.r} y1={y(m.value)} y2={y(m.value)} className="grid" />
@@ -237,7 +245,7 @@ function MoodChart({ buckets, range, avg }: { buckets: Bucket[]; range: Range; a
           height={H}
           fill="transparent"
           tabIndex={0}
-          aria-label="Mood chart. Use the left and right arrow keys to read each point."
+          aria-label="Gráfico do humor. Usa as setas para a esquerda e para a direita para ler cada ponto."
           onPointerDown={(e) => pick(e.clientX, e.currentTarget.ownerSVGElement!.getBoundingClientRect())}
           onPointerMove={(e) => e.pointerType === 'mouse' && pick(e.clientX, e.currentTarget.ownerSVGElement!.getBoundingClientRect())}
           onPointerLeave={(e) => e.pointerType === 'mouse' && setSel(null)}
@@ -250,12 +258,12 @@ function MoodChart({ buckets, range, avg }: { buckets: Bucket[]; range: Range; a
         />
       </svg>
       <details className="tableview">
-        <summary>Show as a table</summary>
+        <summary>Ver como tabela</summary>
         <table>
           <thead>
             <tr>
-              <th>{range === 'year' ? 'Month' : 'Day'}</th>
-              <th>Mood</th>
+              <th>{range === 'year' ? 'Mês' : 'Dia'}</th>
+              <th>Humor</th>
               <th>Check-ins</th>
             </tr>
           </thead>
@@ -265,7 +273,7 @@ function MoodChart({ buckets, range, avg }: { buckets: Bucket[]; range: Range; a
               .map((b) => (
                 <tr key={b.start}>
                   <td>{b.long}</td>
-                  <td>{fmtMood(b.avg!)} ({b.avg!.toFixed(1)})</td>
+                  <td>{fmtMood(b.avg!)} ({b.avg!.toFixed(1).replace('.', ',')})</td>
                   <td>{b.n}</td>
                 </tr>
               ))}
@@ -281,10 +289,10 @@ function Bars({ rows }: { rows: { label: string; n: number; note?: string; noteL
   return (
     <ul className="bars">
       {rows.map((r) => (
-        <li key={r.label} aria-label={`${r.label}: ${plural(r.n, 'time')}${r.noteLabel ? `, ${r.noteLabel}` : ''}`}>
+        <li key={r.label} aria-label={`${r.label}: ${plural(r.n, 'vez', 'vezes')}${r.noteLabel ? `, ${r.noteLabel}` : ''}`}>
           <span className="bar-label">{r.label}</span>
           <span className="bar-track">
-            <span className="bar" style={{ width: `calc((100% - 7.5em) * ${r.n / max})` }} />
+            <span className="bar" style={{ width: `calc((100% - 4.5em) * ${r.n / max})` }} />
             <span className="bar-value">
               {r.n}× {r.note && <span className="bar-note">{r.note}</span>}
             </span>
@@ -302,7 +310,7 @@ function Weekdays({ days }: { days: { label: string; avg?: number; n: number }[]
         <div
           key={d.label}
           className="wd"
-          aria-label={d.avg !== undefined ? `${d.label}: ${fmtMood(d.avg)}, ${plural(d.n, 'check-in')}` : `${d.label}: no data`}
+          aria-label={d.avg !== undefined ? `${d.label}: ${fmtMood(d.avg)}, ${plural(d.n, 'check-in')}` : `${d.label}: sem dados`}
         >
           <span className="wd-col">
             {d.avg !== undefined && (

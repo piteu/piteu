@@ -1,3 +1,4 @@
+import { LOCALE } from './locale';
 import { MOODS } from './flows';
 import { type Entry, entryTime } from './types';
 
@@ -10,12 +11,12 @@ export function formatDay(ts: number): string {
   const today = dayKey(Date.now());
   const yesterday = dayKey(Date.now() - 86_400_000);
   const k = dayKey(ts);
-  if (k === today) return 'Today';
-  if (k === yesterday) return 'Yesterday';
-  return new Date(ts).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  if (k === today) return 'Hoje';
+  if (k === yesterday) return 'Ontem';
+  return new Date(ts).toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-export const formatTime = (ts: number) => new Date(ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+export const formatTime = (ts: number) => new Date(ts).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' });
 
 export const moodFace = (m?: number) => MOODS.find((x) => x.value === m)?.face ?? '';
 
@@ -31,19 +32,19 @@ export function writtenTexts(e: Entry): string[] {
 }
 
 export function toMarkdown(entries: Entry[]): string {
-  const lines = ['# My Bruna journal', ''];
+  const lines = ['# O meu diário da Bruna', ''];
   const sorted = [...entries].sort((a, b) => entryTime(a) - entryTime(b));
   let lastDay = '';
   for (const e of sorted) {
     const day = dayKey(entryTime(e));
     if (day !== lastDay) {
-      lines.push(`## ${new Date(entryTime(e)).toLocaleDateString(undefined, { dateStyle: 'full' })}`, '');
+      lines.push(`## ${new Date(entryTime(e)).toLocaleDateString(LOCALE, { dateStyle: 'full' })}`, '');
       lastDay = day;
     }
     lines.push(`### ${formatTime(e.createdAt)} · ${e.flowTitle} ${moodFace(e.mood)}`.trimEnd(), '');
-    if (e.activities?.length) lines.push(`**Did:** ${e.activities.join(', ')}  `);
+    if (e.activities?.length) lines.push(`**Fiz:** ${e.activities.join(', ')}  `);
     for (const d of e.details ?? []) lines.push(`- *${d.item}:* ${d.text.replace(/\n+/g, ' ')}`);
-    if (e.people?.length) lines.push(`**With:** ${e.people.join(', ')}  `);
+    if (e.people?.length) lines.push(`**Com:** ${e.people.join(', ')}  `);
     if (e.activities?.length || e.people?.length) lines.push('');
     for (const m of e.messages) {
       lines.push(m.from === 'app' ? `*${m.text}*` : m.text.split('\n').map((l) => `> ${l}`).join('\n'), '');
@@ -84,13 +85,13 @@ export function reminderIcs(hour: number, minute: number, url: string, now = new
     `DTSTART:${local}`, // floating time: always this time of day, wherever you are
     'DURATION:PT5M',
     'RRULE:FREQ=DAILY',
-    'SUMMARY:Bruna: what did you do today?',
-    'DESCRIPTION:Take a minute to log your day in Bruna.',
+    'SUMMARY:Bruna: o que fizeste hoje?',
+    'DESCRIPTION:Tira um minuto para registar o teu dia na Bruna.',
     `URL:${url}`,
     'TRANSP:TRANSPARENT',
     'BEGIN:VALARM',
     'ACTION:DISPLAY',
-    'DESCRIPTION:What did you do today? Log it in Bruna.',
+    'DESCRIPTION:O que fizeste hoje? Regista na Bruna.',
     'TRIGGER:PT0M',
     'END:VALARM',
     'END:VEVENT',

@@ -20,7 +20,7 @@ describe('periods', () => {
     expect(p.buckets).toHaveLength(7);
     expect(p.buckets[2].future).toBe(false); // Wed = today
     expect(p.buckets[3].future).toBe(true);
-    expect(p.label).toBe('This week');
+    expect(p.label).toBe('Esta semana');
   });
   it('months have one bucket per day; years one per month', () => {
     expect(getPeriod('month', 0, NOW).buckets).toHaveLength(30);

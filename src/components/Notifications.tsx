@@ -56,21 +56,21 @@ export default function Notifications({ settings, onSettings }: { settings: Sett
 
   return (
     <section className="card notifications">
-      <h2>Notifications</h2>
+      <h2>Notificações</h2>
 
       {state === 'install' && (
         <p className="small">
-          To get notifications on iPhone, open Bruna from its <b>home-screen icon</b> (not from Safari), then come back
-          here. You need iOS 16.4 or newer.
+          Para receberes notificações no iPhone, abre a Bruna pelo <b>ícone no ecrã principal</b> (não pelo Safari), e
+          volta aqui. Precisas do iOS 16.4 ou mais recente.
         </p>
       )}
       {state === 'unsupported' && (
-        <p className="small">This browser can’t show notifications. The calendar reminder below works everywhere.</p>
+        <p className="small">Este navegador não consegue mostrar notificações. O lembrete no calendário, mais abaixo, funciona em todo o lado.</p>
       )}
 
       {state === 'ok' && (
         <>
-          <p className="small">Choose what Bruna reminds you about, and when. Times are in your time zone.</p>
+          <p className="small">Escolhe do que a Bruna te lembra, e quando. As horas são as do teu fuso horário.</p>
           <div className="notif-list">
             {KIND_INFO.map((k) => (
               <label key={k.kind} className="notif-row">
@@ -79,7 +79,7 @@ export default function Notifications({ settings, onSettings }: { settings: Sett
                   <span className="muted small"> · {k.when}</span>
                 </span>
                 <select value={at[k.kind] ?? 'off'} onChange={(e) => setHour(k.kind, e.target.value)}>
-                  <option value="off">Off</option>
+                  <option value="off">Desligado</option>
                   {HOURS.map((h) => (
                     <option key={h} value={h}>
                       {hh(h)}
@@ -92,60 +92,60 @@ export default function Notifications({ settings, onSettings }: { settings: Sett
 
           {!push ? (
             <button className="primary block" disabled={busy} onClick={enable}>
-              {busy ? 'Turning on…' : 'Turn on notifications'}
+              {busy ? 'A ligar…' : 'Ligar notificações'}
             </button>
           ) : (
             <>
               <p className="small ok-line">
-                ✓ This phone is set up for notifications ({push.tz}).
+                ✓ Este telemóvel está pronto para notificações ({push.tz}).
               </p>
               {changed && (
                 <p className="small warn">
-                  You made a change — copy the code again and update it on GitHub (steps 1–2), or the old times stay.
+                  Fizeste uma alteração — copia o código outra vez e atualiza-o no GitHub (passos 1–2), senão ficam as horas antigas.
                 </p>
               )}
               <ol className="steps small">
                 <li>
                   <button className="primary small" onClick={copy}>
-                    {copied ? 'Copied ✓' : 'Copy your code'}
+                    {copied ? 'Copiado ✓' : 'Copiar o teu código'}
                   </button>{' '}
                   <button className="link small" onClick={() => setShowCode((s) => !s)}>
-                    {showCode ? 'Hide' : 'Show'} code
+                    {showCode ? 'Esconder' : 'Mostrar'} código
                   </button>
                   {showCode && <textarea className="code" readOnly value={makeCode(push)} onFocus={(e) => e.target.select()} />}
-                  <span className="muted"> Keep it private: it lets someone send notifications to this phone.</span>
+                  <span className="muted"> Guarda-o só para ti: permite enviar notificações para este telemóvel.</span>
                 </li>
                 <li>
-                  Open{' '}
+                  Abre{' '}
                   <a href={gh('/settings/secrets/actions/new')} target="_blank" rel="noreferrer">
-                    GitHub → New secret
+                    GitHub → novo segredo
                   </a>
-                  . Name it <code>BRUNA_PUSH</code>, paste the code, and tap <b>Add secret</b>.
+                  . No nome escreve <code>BRUNA_PUSH</code>, cola o código, e toca em <b>Add secret</b>.
                   <br />
                   <span className="muted">
-                    Already added it before? Open{' '}
+                    Já o tinhas adicionado? Abre{' '}
                     <a href={gh('/settings/secrets/actions')} target="_blank" rel="noreferrer">
-                      your secrets
+                      os teus segredos
                     </a>
-                    , tap ✏️ next to BRUNA_PUSH, paste, and <b>Update secret</b>.
+                    , toca em ✏️ ao lado de BRUNA_PUSH, cola, e toca em <b>Update secret</b>.
                   </span>
                 </li>
                 <li>
-                  Test it: open{' '}
+                  Experimenta: abre{' '}
                   <a href={gh('/actions/workflows/notify.yml')} target="_blank" rel="noreferrer">
                     Send notifications
                   </a>{' '}
-                  → <b>Run workflow</b> → <b>Run workflow</b>. Within a minute or two you should get “Notifications are
-                  working! 🎉”.
+                  → <b>Run workflow</b> → <b>Run workflow</b>. Dentro de um ou dois minutos deves receber “As notificações
+                  estão a funcionar! 🎉”.
                 </li>
               </ol>
               <p className="muted small">
-                Reminders can arrive up to about 20 minutes after the hour you chose. They only contain the reminder text —
-                nothing from your journal.
+                Os lembretes podem chegar até cerca de 20 minutos depois da hora escolhida. Só contêm o texto do lembrete —
+                nada do teu diário.
               </p>
               <div className="row">
                 <button className="link small" disabled={busy} onClick={enable}>
-                  Not getting them? Reconnect this phone
+                  Não estão a chegar? Voltar a ligar este telemóvel
                 </button>
                 <button
                   className="link small danger"
@@ -155,10 +155,10 @@ export default function Notifications({ settings, onSettings }: { settings: Sett
                     void _drop;
                     onSettings(rest);
                     setChanged(false);
-                    setNote('Notifications turned off. You can also delete the BRUNA_PUSH secret on GitHub.');
+                    setNote('Notificações desligadas. Também podes apagar o segredo BRUNA_PUSH no GitHub.');
                   }}
                 >
-                  Turn off
+                  Desligar
                 </button>
               </div>
             </>

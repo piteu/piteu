@@ -4,27 +4,27 @@
 export const KINDS = {
   evening: {
     title: 'Bruna',
-    bodies: ['What did you do today? 📝', 'How was today? A few taps is enough.', 'Time to look back on today 🌙'],
+    bodies: ['O que fizeste hoje? 📝', 'Como foi o dia? Bastam uns toques.', 'Hora de olhar para o dia de hoje 🌙'],
     url: './?go=evening',
   },
   morning: {
-    title: 'Good morning ☀️',
-    bodies: ['Anything to add about yesterday? It only takes a few taps.'],
+    title: 'Bom dia ☀️',
+    bodies: ['Queres acrescentar algo sobre ontem? São só uns toques.'],
     url: './?go=yesterday',
   },
   weekly: {
-    title: 'Look back at your week 📅',
-    bodies: ['See what you did and who you saw this week.'],
+    title: 'Olha para a tua semana 📅',
+    bodies: ['Vê o que fizeste e com quem estiveste esta semana.'],
     url: './?go=week',
   },
   practice: {
-    title: '1-minute memory practice 🧠',
-    bodies: ['Can you remember what you did a few days ago?'],
+    title: 'Treino de memória de 1 minuto 🧠',
+    bodies: ['Consegues lembrar-te do que fizeste há uns dias?'],
     url: './?go=practice',
   },
   test: {
     title: 'Bruna',
-    bodies: ['Notifications are working! 🎉'],
+    bodies: ['As notificações estão a funcionar! 🎉'],
     url: './',
   },
 };

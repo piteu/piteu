@@ -43,12 +43,12 @@ export interface Flow {
   steps: Step[];
 }
 
-export const MOODS: { value: Mood; face: string; label: string }[] = [
-  { value: 1, face: '😣', label: 'Awful' },
-  { value: 2, face: '😕', label: 'Low' },
-  { value: 3, face: '😐', label: 'Okay' },
-  { value: 4, face: '🙂', label: 'Good' },
-  { value: 5, face: '😄', label: 'Great' },
+export const MOODS: { value: Mood; face: string; label: string; day: string }[] = [
+  { value: 1, face: '😣', label: 'Péssimo', day: 'péssimo' },
+  { value: 2, face: '😕', label: 'Em baixo', day: 'difícil' },
+  { value: 3, face: '😐', label: 'Mais ou menos', day: 'mais ou menos' },
+  { value: 4, face: '🙂', label: 'Bem', day: 'bom' },
+  { value: 5, face: '😄', label: 'Ótimo', day: 'ótimo' },
 ];
 
 export const moodOf = (c: Ctx) => (c.answers.mood as Mood | undefined) ?? 3;
@@ -61,28 +61,33 @@ const first = (c: Ctx, id: string) => {
 };
 const comma = (c: Ctx) => (c.name ? `, ${c.name}` : '');
 
+// Feelings are nouns ("Ansiedade", not "Ansioso/a"), so nothing depends on gender.
 export const LOW_FEELINGS = [
-  'Stressed', 'Anxious', 'Sad', 'Tired', 'Frustrated', 'Overwhelmed',
-  'Lonely', 'Angry', 'Hurt', 'Worried', 'Disappointed', 'Numb',
+  'Stress', 'Ansiedade', 'Tristeza', 'Cansaço', 'Frustração', 'Sobrecarga',
+  'Solidão', 'Raiva', 'Mágoa', 'Preocupação', 'Desilusão', 'Vazio',
 ];
-export const MID_FEELINGS = ['Fine', 'Tired', 'Calm', 'Bored', 'Restless', 'Distracted', 'Unsure', 'Meh'];
+export const MID_FEELINGS = ['Normal', 'Cansaço', 'Calma', 'Tédio', 'Inquietação', 'Distração', 'Dúvida', 'Assim-assim'];
 export const HIGH_FEELINGS = [
-  'Happy', 'Calm', 'Grateful', 'Proud', 'Excited', 'Relaxed',
-  'Loved', 'Hopeful', 'Energised', 'Content',
+  'Alegria', 'Calma', 'Gratidão', 'Orgulho', 'Entusiasmo', 'Descontração',
+  'Carinho', 'Esperança', 'Energia', 'Satisfação',
 ];
+export const NOT_SURE = 'Não sei';
 export const TOPICS = [
-  'Work', 'Study', 'Family', 'Friends', 'Partner', 'Health',
-  'Sleep', 'Money', 'Home', 'Myself', 'The news', 'Not sure',
+  'Trabalho', 'Estudos', 'Família', 'Amigos', 'Relação', 'Saúde',
+  'Sono', 'Dinheiro', 'Casa', 'Eu', 'Notícias', NOT_SURE,
 ];
 
 // Emoji make these quicker to recognise at a glance.
 export const ACTIVITIES = [
-  '💼 Work', '📚 Study', '🏃 Exercise', '🚶 Walk', '🍳 Cooked', '🍽️ Ate out', '🛒 Shopping',
-  '🧹 Chores', '🧾 Errands', '👫 Saw friends', '👨‍👩‍👧 Family time', '📞 Called someone', '❤️ Date',
-  '🩺 Doctor / health', '🎨 Hobby', '📖 Read', '📺 Watched something', '🎮 Games', '🚌 Travelled',
-  '🎉 Went out', '😴 Rested',
+  '💼 Trabalho', '📚 Estudo', '🏃 Exercício', '🚶 Caminhada', '🍳 Cozinhei', '🍽️ Comi fora', '🛒 Compras',
+  '🧹 Tarefas de casa', '🧾 Recados', '👫 Estive com amigos', '👨‍👩‍👧 Família', '📞 Liguei a alguém', '❤️ Encontro',
+  '🩺 Médico / saúde', '🎨 Hobby', '📖 Li', '📺 Série / filme', '🎮 Jogos', '🚌 Viagem',
+  '🎉 Saí', '😴 Descansei',
 ];
-export const NO_ONE = 'No one';
+export const NO_ONE = 'Ninguém';
+
+/** Answers to "Which day is this about?" */
+export const DAY = { today: 'Hoje', yesterday: 'Ontem', before: 'Anteontem' } as const;
 
 /** Your own activities first (most used), then the rest of the defaults. */
 export const activityOptions = (c: Ctx) => [...new Set([...(c.known?.activities ?? []), ...ACTIVITIES])];
@@ -90,18 +95,21 @@ export const peopleOptions = (c: Ctx) => [...(c.known?.people ?? []).slice(0, 15
 
 const dayWord = (c: Ctx) => {
   const d = c.answers.day;
-  return d === 'Yesterday' ? 'yesterday' : d === '2 days ago' ? 'that day' : 'today';
+  return d === DAY.yesterday ? 'ontem' : d === DAY.before ? 'nesse dia' : 'hoje';
 };
 
 const activitySteps: Step[] = [
   {
-    kind: 'choice', id: 'activities', multi: true, other: 'Add something else',
-    text: (c) => `What did you do ${dayWord(c)}? Tap everything that fits.`,
+    kind: 'choice', id: 'activities', multi: true, other: 'Acrescentar outra coisa',
+    text: (c) => `O que fizeste ${dayWord(c)}? Toca em tudo o que se aplica.`,
     options: activityOptions,
   },
   {
-    kind: 'choice', id: 'people', multi: true, other: 'Add a name',
-    text: (c) => (c.known?.people.length ? `Who did you see or talk to?` : 'Who did you see or talk to? Add their names — next time they’ll be here to tap.'),
+    kind: 'choice', id: 'people', multi: true, other: 'Acrescentar um nome',
+    text: (c) =>
+      c.known?.people.length
+        ? 'Com quem estiveste ou falaste?'
+        : 'Com quem estiveste ou falaste? Acrescenta os nomes — da próxima vez já cá estão para tocar.',
     options: peopleOptions,
   },
 ];
@@ -112,216 +120,216 @@ const feelingsFor = (c: Ctx) => (low(c) ? LOW_FEELINGS : high(c) ? HIGH_FEELINGS
 
 const quick: Flow = {
   id: 'quick',
-  title: 'Quick check-in',
-  blurb: 'Mostly tapping. Good for any time.',
+  title: 'Check-in rápido',
+  blurb: 'Quase só tocar. Bom para qualquer altura.',
   minutes: 1,
   steps: [
-    { kind: 'mood', id: 'mood', text: 'How are you feeling right now?' },
-    { kind: 'choice', id: 'feelings', multi: true, text: 'Which words fit best? Pick as many as you like.', options: feelingsFor },
-    { kind: 'choice', id: 'topics', multi: true, text: "What's it mostly about?", options: TOPICS },
+    { kind: 'mood', id: 'mood', text: 'Como te estás a sentir agora?' },
+    { kind: 'choice', id: 'feelings', multi: true, text: 'Que palavras descrevem melhor o que sentes? Escolhe as que quiseres.', options: feelingsFor },
+    { kind: 'choice', id: 'topics', multi: true, text: 'Tem mais a ver com quê?', options: TOPICS },
 
     // Low mood: understand it, then one small helpful step.
     {
       kind: 'write', id: 'what', when: low,
-      text: (c) => (first(c, 'feelings') ? `What happened that left you feeling ${first(c, 'feelings')}?` : "What's been weighing on you?"),
-      starters: ['It started when…', 'I keep thinking about…', 'The hardest part is…'],
-      easier: 'If you had to sum it up in one sentence, what would it be?',
-      nudge: 'Can you say a little more? What happened, or what went through your head?',
+      text: (c) => (first(c, 'feelings') ? `O que aconteceu para sentires ${first(c, 'feelings')}?` : 'O que te tem pesado?'),
+      starters: ['Começou quando…', 'Não paro de pensar em…', 'O mais difícil é…'],
+      easier: 'Se tivesses de resumir numa frase, o que dirias?',
+      nudge: 'Consegues dizer um pouco mais? O que aconteceu, ou o que te passou pela cabeça?',
     },
     {
       kind: 'write', id: 'help', when: low,
-      text: "What's one small thing that could help, even a little?",
-      starters: ['I could…', 'It would help to talk to…', 'Tonight I’ll…'],
-      easier: 'What usually makes you feel even 1% better?',
+      text: 'Qual é uma pequena coisa que podia ajudar, nem que seja um bocadinho?',
+      starters: ['Podia…', 'Ajudava falar com…', 'Hoje à noite vou…'],
+      easier: 'O que é que costuma fazer-te sentir nem que seja 1% melhor?',
     },
 
     // Okay mood
     {
       kind: 'write', id: 'what', when: mid,
-      text: "What's been on your mind today?",
-      starters: ['Mostly I’ve been thinking about…', 'Today I…', 'I noticed that…'],
-      easier: "What's one thing you did today?",
-      nudge: 'How did that feel?',
+      text: 'O que te tem andado na cabeça hoje?',
+      starters: ['Tenho pensado sobretudo em…', 'Hoje…', 'Reparei que…'],
+      easier: 'Diz-me uma coisa que fizeste hoje.',
+      nudge: 'E como te sentiste com isso?',
     },
     {
       kind: 'write', id: 'next', when: mid,
-      text: 'Anything coming up that you’re looking forward to?',
-      starters: ['I’m looking forward to…', 'Soon I want to…', 'Not really, but…'],
+      text: 'Há alguma coisa para breve de que estejas à espera com vontade?',
+      starters: ['Mal posso esperar por…', 'Em breve quero…', 'Nem por isso, mas…'],
     },
 
     // Good mood: savour it, and notice your part in it.
     {
       kind: 'write', id: 'what', when: high,
-      text: (c) => (first(c, 'feelings') ? `Nice! What's making you feel ${first(c, 'feelings')}?` : 'Nice! What made it a good one?'),
-      starters: ['It was when…', 'I’m glad that…', 'The best part was…'],
-      easier: "What's one good moment you'd like to remember?",
-      nudge: 'Tell me a bit more — where were you, who was there?',
+      text: (c) => (first(c, 'feelings') ? `Que bom! O que te fez sentir ${first(c, 'feelings')}?` : 'Que bom! O que fez disto um bom momento?'),
+      starters: ['Foi quando…', 'Fico feliz por…', 'O melhor foi…'],
+      easier: 'Qual é um bom momento de que te queres lembrar?',
+      nudge: 'Conta-me um pouco mais — onde estavas, quem estava contigo?',
     },
     {
       kind: 'write', id: 'agency', when: high,
-      text: 'Did you do anything that helped make it happen?',
-      starters: ['I decided to…', 'I made time for…', 'I reached out to…'],
+      text: 'Fizeste alguma coisa que ajudou a que isso acontecesse?',
+      starters: ['Decidi…', 'Arranjei tempo para…', 'Falei com…'],
     },
 
     {
       kind: 'say',
       text: (c) =>
         low(c)
-          ? `Thank you for writing that down${comma(c)}. Being honest about a hard day takes something. Go easy on yourself.`
+          ? `Obrigada por escreveres isto${comma(c)}. Falar com sinceridade sobre um dia difícil não é fácil. Trata-te com carinho.`
           : high(c)
-            ? 'Love that. It’s saved — something to look back on during a harder day.'
-            : 'Thanks for checking in. That’s today saved.',
+            ? 'Adoro. Ficou guardado — para recordares num dia mais difícil.'
+            : 'Obrigada pelo check-in. O dia de hoje ficou guardado.',
     },
     {
       kind: 'say',
       when: (c) => moodOf(c) === 1,
-      text: 'If things feel really heavy, talking to someone you trust can help. There are support lines in Settings, any time.',
+      text: 'Se as coisas estiverem mesmo pesadas, falar com alguém de confiança pode ajudar. Tens linhas de apoio nas Definições, a qualquer hora.',
     },
   ],
 };
 
 const evening: Flow = {
   id: 'evening',
-  title: 'End of day',
-  blurb: 'Wrap up today in a few short questions.',
+  title: 'Fim do dia',
+  blurb: 'Fecha o dia com algumas perguntas curtas.',
   minutes: 3,
   steps: [
-    { kind: 'mood', id: 'mood', text: 'How was today, overall?' },
+    { kind: 'mood', id: 'mood', text: 'No geral, como foi o dia?' },
     ...activitySteps,
     { kind: 'followups', max: 2 },
     {
       kind: 'write', id: 'title',
-      text: 'If today had a title, what would it be?',
-      starters: ['The day I…', 'Just another…', 'Finally…'],
-      easier: 'Pick one word for today.',
+      text: 'Se o dia de hoje tivesse um título, qual seria?',
+      starters: ['O dia em que…', 'Mais um dia de…', 'Finalmente…'],
+      easier: 'Escolhe uma palavra para o dia de hoje.',
     },
     {
       kind: 'write', id: 'good',
-      text: "What's one thing that went well today? Tiny things count.",
-      starters: ['I enjoyed…', 'It was nice when…', 'I managed to…'],
-      easier: 'Was there a moment, even a short one, that felt okay?',
-      nudge: 'What made it good?',
+      text: 'Qual é uma coisa que correu bem hoje? Pequenas coisas também contam.',
+      starters: ['Gostei de…', 'Foi bom quando…', 'Consegui…'],
+      easier: 'Houve algum momento, mesmo curto, em que te sentiste bem?',
+      nudge: 'O que o tornou bom?',
     },
     {
       kind: 'write', id: 'why',
-      text: 'Why do you think it went well?',
-      starters: ['Because I…', 'Because someone…', 'It helped that…'],
+      text: 'Porque achas que correu bem?',
+      starters: ['Porque eu…', 'Porque alguém…', 'Ajudou o facto de…'],
     },
-    { kind: 'choice', id: 'hard', text: 'Was there a hard moment today?', options: ['Yes', 'Not really'] },
+    { kind: 'choice', id: 'hard', text: 'Houve algum momento difícil hoje?', options: ['Sim', 'Nem por isso'] },
     {
-      kind: 'write', id: 'hardWhat', when: (c) => c.answers.hard === 'Yes',
-      text: 'What happened?',
-      starters: ['It was when…', 'I felt… because…', 'Someone…'],
-      easier: 'Where were you when it happened, and who was there?',
-      nudge: 'How did it make you feel?',
+      kind: 'write', id: 'hardWhat', when: (c) => c.answers.hard === 'Sim',
+      text: 'O que aconteceu?',
+      starters: ['Foi quando…', 'Senti… porque…', 'Alguém…'],
+      easier: 'Onde estavas quando aconteceu, e quem estava contigo?',
+      nudge: 'Como te fez sentir?',
     },
     {
-      kind: 'write', id: 'hardHow', when: (c) => c.answers.hard === 'Yes',
-      text: 'How did you handle it — or how would you like to next time?',
-      starters: ['I handled it by…', 'Next time I’d…', 'I wish I had…'],
+      kind: 'write', id: 'hardHow', when: (c) => c.answers.hard === 'Sim',
+      text: 'Como lidaste com isso — ou como gostavas de lidar da próxima vez?',
+      starters: ['Lidei com isso…', 'Da próxima vez…', 'Gostava de ter…'],
     },
     {
       kind: 'write', id: 'tomorrow',
-      text: "What's one thing you'd like to do tomorrow?",
-      starters: ['Tomorrow I want to…', 'I’ll make time for…', 'I need to…'],
+      text: 'O que gostavas de fazer amanhã?',
+      starters: ['Amanhã quero…', 'Vou arranjar tempo para…', 'Preciso de…'],
     },
-    { kind: 'say', text: (c) => `That’s today wrapped up. Sleep well${comma(c)}.` },
+    { kind: 'say', text: (c) => `O dia de hoje está fechado. Dorme bem${comma(c)}.` },
   ],
 };
 
 const mind: Flow = {
   id: 'mind',
-  title: "Something's on my mind",
-  blurb: 'Untangle a worry or something that upset you.',
+  title: 'Tenho uma coisa na cabeça',
+  blurb: 'Desenrolar uma preocupação ou algo que te chateou.',
   minutes: 4,
   steps: [
     {
       kind: 'write', id: 'what',
-      text: "What's on your mind? A few words is enough.",
-      starters: ['I’m worried about…', 'I can’t stop thinking about…', 'I’m upset because…'],
-      easier: 'Who or what is it about?',
-      nudge: "What's the part that bothers you most?",
+      text: 'O que tens na cabeça? Bastam umas palavras.',
+      starters: ['Preocupa-me…', 'Não consigo parar de pensar em…', 'O que me chateia é…'],
+      easier: 'É sobre quem, ou sobre o quê?',
+      nudge: 'Qual é a parte que te incomoda mais?',
     },
-    { kind: 'choice', id: 'feelings', multi: true, text: 'Which feelings come with it?', options: LOW_FEELINGS },
-    { kind: 'choice', id: 'before', text: 'How strong is it right now?', options: ['A little', 'Quite a lot', 'Very strong'] },
+    { kind: 'choice', id: 'feelings', multi: true, text: 'Que sentimentos vêm com isso?', options: LOW_FEELINGS },
+    { kind: 'choice', id: 'before', text: 'Quão forte é agora?', options: ['Um pouco', 'Bastante', 'Muito forte'] },
     {
       kind: 'write', id: 'fear',
-      text: "What's the worst you're afraid might happen?",
-      starters: ['I’m scared that…', 'What if…'],
-      easier: 'What are you hoping won’t happen?',
+      text: 'Qual é o pior que tens medo que aconteça?',
+      starters: ['Tenho medo que…', 'E se…'],
+      easier: 'O que esperas que não aconteça?',
     },
     {
       kind: 'write', id: 'likely',
-      text: 'And realistically, what’s most likely to happen?',
-      starters: ['Probably…', 'Most likely…', 'Honestly, I don’t know, but…'],
+      text: 'E, sendo realista, o que é mais provável que aconteça?',
+      starters: ['Provavelmente…', 'O mais certo é…', 'Sinceramente não sei, mas…'],
     },
     {
       kind: 'write', id: 'friend',
-      text: 'If a close friend told you this, what would you say to them?',
-      starters: ['I’d tell them…', 'I’d remind them that…', 'I’d say it makes sense because…'],
-      easier: 'What would someone who cares about you say right now?',
+      text: 'Se um amigo próximo te contasse isto, o que lhe dirias?',
+      starters: ['Dizia-lhe…', 'Lembrava-lhe que…', 'Dizia que faz sentido porque…'],
+      easier: 'O que diria agora alguém que gosta de ti?',
     },
-    { kind: 'choice', id: 'control', text: 'Can you do anything about it?', options: ['Yes', 'A bit', 'Not really'] },
+    { kind: 'choice', id: 'control', text: 'Podes fazer alguma coisa em relação a isto?', options: ['Sim', 'Um pouco', 'Nem por isso'] },
     {
-      kind: 'write', id: 'step', when: (c) => c.answers.control === 'Yes' || c.answers.control === 'A bit',
-      text: "What's one small first step?",
-      starters: ['First, I could…', 'I’ll ask…', 'Today I can…'],
+      kind: 'write', id: 'step', when: (c) => c.answers.control === 'Sim' || c.answers.control === 'Um pouco',
+      text: 'Qual é um primeiro passo pequeno?',
+      starters: ['Primeiro, podia…', 'Vou perguntar a…', 'Hoje posso…'],
     },
     {
-      kind: 'write', id: 'letgo', when: (c) => c.answers.control === 'Not really',
-      text: 'What would help you put it down for now?',
-      starters: ['I could…', 'It might help to…', 'For now I’ll…'],
-      easier: 'What is something calming you could do in the next hour?',
+      kind: 'write', id: 'letgo', when: (c) => c.answers.control === 'Nem por isso',
+      text: 'O que te ajudaria a pôr isto de lado por agora?',
+      starters: ['Podia…', 'Talvez ajude…', 'Por agora vou…'],
+      easier: 'Que coisa calma podias fazer na próxima hora?',
     },
-    { kind: 'choice', id: 'after', text: 'How strong is the feeling now?', options: ['Lighter', 'About the same', 'Stronger'] },
+    { kind: 'choice', id: 'after', text: 'E agora, quão forte é o sentimento?', options: ['Mais leve', 'Igual', 'Mais forte'] },
     {
       kind: 'say',
       text: (c) =>
-        c.answers.after === 'Lighter'
-          ? 'Good. Getting it out of your head and onto the page often does that.'
-          : c.answers.after === 'Stronger'
-            ? 'That’s okay — sometimes looking at something closely stirs it up before it settles. Be gentle with yourself, and consider talking to someone you trust. Support lines are in Settings.'
-            : 'Thanks for working through it. Even when it doesn’t feel different yet, it’s written down now — you don’t have to hold all of it in your head.',
+        c.answers.after === 'Mais leve'
+          ? 'Ainda bem. Tirar as coisas da cabeça e pô-las por escrito costuma ajudar.'
+          : c.answers.after === 'Mais forte'
+            ? 'Não faz mal — às vezes olhar de perto para uma coisa agita-a antes de assentar. Trata-te com cuidado, e pensa em falar com alguém de confiança. Tens linhas de apoio nas Definições.'
+            : 'Obrigada por teres pensado nisto. Mesmo que ainda não pareça diferente, agora está escrito — não tens de guardar tudo na cabeça.',
     },
   ],
 };
 
 const gratitude: Flow = {
   id: 'gratitude',
-  title: 'Three good things',
-  blurb: 'Three quick things you’re glad about.',
+  title: 'Três coisas boas',
+  blurb: 'Três coisas rápidas que te deixaram contente.',
   minutes: 1,
   steps: [
     {
       kind: 'write', id: 'g1',
-      text: 'Name one thing you’re glad about today. Anything counts — a coffee, a song, a person.',
-      starters: ['I’m glad that…', 'I enjoyed…', 'I’m thankful for…'],
-      easier: 'What’s something small that you’d miss if it was gone?',
+      text: 'Diz uma coisa que te deixou contente hoje. Tudo conta — um café, uma música, uma pessoa.',
+      starters: ['Fico contente por…', 'Gostei de…', 'Sinto gratidão por…'],
+      easier: 'Que coisa pequena te faria falta se desaparecesse?',
     },
-    { kind: 'write', id: 'g2', text: 'And a second one?', starters: ['Also…', 'Someone who…', 'I liked…'] },
-    { kind: 'write', id: 'g3', text: 'One more?', starters: ['And…', 'Something about me:', 'Something I saw:'] },
-    { kind: 'say', text: 'Three good things, saved. On hard days it helps to look back at lists like this.' },
+    { kind: 'write', id: 'g2', text: 'E uma segunda?', starters: ['Também…', 'Alguém que…', 'Gostei de…'] },
+    { kind: 'write', id: 'g3', text: 'Mais uma?', starters: ['E…', 'Uma coisa sobre mim:', 'Uma coisa que vi:'] },
+    { kind: 'say', text: 'Três coisas boas, guardadas. Nos dias difíceis ajuda voltar a listas como esta.' },
   ],
 };
 
 // Prompts for "Just write" — one is picked per day so it feels fresh.
 export const PROMPTS = [
-  'If today had a title, what would it be?',
-  'What drained your energy today? What gave you energy?',
-  'Describe one small moment from today: what did you see, hear or smell?',
-  'Who made a difference to your week, and how?',
-  'What’s something you’ve been putting off? What makes it hard?',
-  'What’s one thing you’re proud of, even if nobody noticed?',
-  'What do you need more of right now? And less of?',
-  'What would make tomorrow a good day?',
-  'What’s something you’d tell yourself from a year ago?',
-  'What are you worried about — and how likely is it really?',
-  'Write about a place where you feel at ease.',
-  'What’s something you learned recently?',
-  'What made you laugh or smile lately?',
-  'What’s a conversation you keep replaying? What would you say now?',
-  'What are you looking forward to?',
-  'What’s been taking up most of your thinking this week?',
+  'Se o dia de hoje tivesse um título, qual seria?',
+  'O que te tirou energia hoje? E o que te deu energia?',
+  'Descreve um pequeno momento de hoje: o que viste, ouviste ou cheiraste?',
+  'Quem fez a diferença na tua semana, e como?',
+  'O que tens andado a adiar? O que torna isso difícil?',
+  'De que te orgulhas, mesmo que ninguém tenha reparado?',
+  'Do que precisas mais neste momento? E de menos?',
+  'O que faria de amanhã um bom dia?',
+  'O que dirias a quem eras há um ano?',
+  'O que te preocupa — e qual é a probabilidade real disso?',
+  'Escreve sobre um sítio onde te sentes à vontade.',
+  'O que aprendeste recentemente?',
+  'O que te fez rir ou sorrir ultimamente?',
+  'Que conversa não te sai da cabeça? O que dirias agora?',
+  'Do que estás à espera com vontade?',
+  'O que tem ocupado mais os teus pensamentos esta semana?',
 ];
 
 export function promptOfTheDay(d = new Date()): string {
@@ -331,44 +339,44 @@ export function promptOfTheDay(d = new Date()): string {
 
 const free: Flow = {
   id: 'free',
-  title: 'Just write',
-  blurb: 'Write whatever you like, with a prompt if you want one.',
+  title: 'Só escrever',
+  blurb: 'Escreve o que quiseres, com uma pergunta se te apetecer.',
   minutes: 2,
   steps: [
     {
       kind: 'write', id: 'text',
-      text: () => `Write whatever's on your mind. Or try today’s question: “${promptOfTheDay()}”`,
-      starters: ['Right now I…', 'Today…', 'I’ve been thinking about…'],
+      text: () => `Escreve o que te estiver na cabeça. Ou experimenta a pergunta de hoje: “${promptOfTheDay()}”`,
+      starters: ['Agora mesmo…', 'Hoje…', 'Tenho pensado em…'],
       easier: () => PROMPTS[(PROMPTS.indexOf(promptOfTheDay()) + 1) % PROMPTS.length],
-      nudge: 'Want to add a bit more? How did that make you feel?',
+      nudge: 'Queres acrescentar um pouco mais? Como te fez sentir?',
     },
     {
       kind: 'write', id: 'more',
-      text: 'Anything else you want to add?',
-      starters: ['Also…', 'One more thing…'],
+      text: 'Mais alguma coisa que queiras acrescentar?',
+      starters: ['Também…', 'Só mais uma coisa…'],
     },
-    { kind: 'say', text: 'Saved.' },
+    { kind: 'say', text: 'Guardado.' },
   ],
 };
 
 const log: Flow = {
   id: 'log',
-  title: 'What I did',
-  blurb: 'Tap what you did and who you saw, so you can look it up later.',
+  title: 'O que fiz',
+  blurb: 'Toca no que fizeste e com quem estiveste, para poderes consultar mais tarde.',
   minutes: 1,
   steps: [
-    { kind: 'choice', id: 'day', text: 'Which day is this about?', options: ['Today', 'Yesterday', '2 days ago'], when: (c) => !c.answers.day },
+    { kind: 'choice', id: 'day', text: 'Este registo é sobre que dia?', options: [DAY.today, DAY.yesterday, DAY.before], when: (c) => !c.answers.day },
     ...activitySteps,
     { kind: 'followups', max: 3 },
     {
       kind: 'write', id: 'details',
       when: (c) => !c.answers.followups, // only if there were no specific questions
-      text: 'Anything you’d like to remember about it? What you ate, what you talked about, something funny…',
-      starters: ['I want to remember…', 'We talked about…', 'The funniest part was…', 'I ate…'],
-      easier: (c) => `Let’s walk through it. What’s the first thing you remember doing ${dayWord(c)}?`,
-      nudge: 'Where were you, and what happened next?',
+      text: 'Há alguma coisa de que te queiras lembrar? O que comeste, de que falaste, algo engraçado…',
+      starters: ['Quero lembrar-me de…', 'Falámos sobre…', 'O mais engraçado foi…', 'Comi…'],
+      easier: (c) => `Vamos por partes. Qual é a primeira coisa de que te lembras de ter feito ${dayWord(c)}?`,
+      nudge: 'Onde estavas, e o que aconteceu a seguir?',
     },
-    { kind: 'say', text: 'Saved. You can find it later in Memory — for example under “When did I last…”.' },
+    { kind: 'say', text: 'Guardado. Podes encontrar isto mais tarde em Memória — por exemplo em “Quando foi a última vez…”.' },
   ],
 };
 

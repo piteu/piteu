@@ -31,7 +31,7 @@ describe('notification schedule', () => {
   it('builds messages that open the right place', () => {
     expect(message('evening').url).toBe('./?go=evening');
     expect(message('morning').url).toBe('./?go=yesterday');
-    expect(message('test').body).toContain('working');
+    expect(message('test').body).toContain('a funcionar');
   });
 
   it('reads the code made by the app, and rejects anything else', () => {

@@ -22,7 +22,7 @@ export default function SettingsView(p: Props) {
 
   return (
     <div className="page">
-      <h1>Settings</h1>
+      <h1>Definições</h1>
       {note && (
         <p className="note" role="status">
           {note}
@@ -30,12 +30,12 @@ export default function SettingsView(p: Props) {
       )}
 
       <section className="card">
-        <h2>You</h2>
+        <h2>Tu</h2>
         <label className="field">
-          <span>Name</span>
+          <span>Nome</span>
           <input
             defaultValue={p.settings.name ?? ''}
-            placeholder="Optional"
+            placeholder="Opcional"
             onBlur={(e) => p.onSettings({ ...p.settings, name: e.target.value.trim() || undefined })}
           />
         </label>
@@ -45,7 +45,7 @@ export default function SettingsView(p: Props) {
             checked={p.settings.nudges}
             onChange={(e) => p.onSettings({ ...p.settings, nudges: e.target.checked })}
           />
-          <span>After a very short answer, gently ask for a little more (once per check-in)</span>
+          <span>Depois de uma resposta muito curta, pedir com calma um pouco mais (uma vez por check-in)</span>
         </label>
       </section>
 
@@ -54,12 +54,12 @@ export default function SettingsView(p: Props) {
       <Reminder setNote={setNote} />
 
       <section className="card">
-        <h2>Lock</h2>
+        <h2>Bloqueio</h2>
         <Passphrase {...p} setNote={setNote} />
         {p.ring.mode === 'passphrase' && (
           <>
             <label className="field">
-              <span>Lock automatically after</span>
+              <span>Bloquear automaticamente ao fim de</span>
               <select
                 value={p.autoLock}
                 onChange={async (e) => {
@@ -68,72 +68,73 @@ export default function SettingsView(p: Props) {
                   p.onAutoLock(v);
                 }}
               >
-                <option value={1}>1 minute</option>
-                <option value={5}>5 minutes</option>
-                <option value={15}>15 minutes</option>
-                <option value={60}>1 hour</option>
-                <option value={0}>Never</option>
+                <option value={1}>1 minuto</option>
+                <option value={5}>5 minutos</option>
+                <option value={15}>15 minutos</option>
+                <option value={60}>1 hora</option>
+                <option value={0}>Nunca</option>
               </select>
             </label>
             <button className="secondary" onClick={p.onLock}>
-              Lock now
+              Bloquear agora
             </button>
           </>
         )}
       </section>
 
       <section className="card">
-        <h2>Backup &amp; export</h2>
+        <h2>Cópia de segurança e exportação</h2>
         <p className="muted small">
-          Your journal only lives on this device. If you lose the phone or clear the browser, it’s gone — so save a
-          backup now and then (e.g. to iCloud Drive or Google Drive).
+          O teu diário só existe neste dispositivo. Se perderes o telemóvel ou limpares os dados do navegador, perde-se —
+          por isso guarda uma cópia de segurança de vez em quando (p. ex. no iCloud Drive ou no Google Drive).
         </p>
         <button
           className="secondary"
           onClick={async () => {
             try {
-              download(`bruna-backup-${today}.json`, JSON.stringify(await makeBackup()), 'application/json');
+              download(`bruna-copia-${today}.json`, JSON.stringify(await makeBackup()), 'application/json');
               setNote(
                 p.ring.mode === 'passphrase'
-                  ? 'Backup saved. It’s encrypted with your passphrase.'
-                  : 'Backup saved. Note: without a passphrase, anyone with this file can read it.',
+                  ? 'Cópia guardada. Está cifrada com a tua palavra-passe.'
+                  : 'Cópia guardada. Atenção: sem palavra-passe, qualquer pessoa com este ficheiro o consegue ler.',
               );
             } catch (e) {
               setNote(String((e as Error).message ?? e));
             }
           }}
         >
-          Save backup
+          Guardar cópia de segurança
         </button>
         <Restore dataKey={p.dataKey} setNote={setNote} />
         <button
           className="secondary"
           onClick={async () => {
-            download(`bruna-journal-${today}.md`, toMarkdown(await listEntries(p.dataKey)), 'text/markdown');
-            setNote('Exported as a readable text file. This one is NOT encrypted — keep it somewhere safe.');
+            download(`bruna-diario-${today}.md`, toMarkdown(await listEntries(p.dataKey)), 'text/markdown');
+            setNote('Exportado como ficheiro de texto legível. Este NÃO está cifrado — guarda-o num sítio seguro.');
           }}
         >
-          Export as readable text
+          Exportar como texto legível
         </button>
       </section>
 
       <section className="card">
-        <h2>Privacy</h2>
+        <h2>Privacidade</h2>
         <ul className="small plain">
-          <li>Your entries are stored only on this device, encrypted. There is no account and no server.</li>
-          <li>Nothing is tracked or sent anywhere. The app works offline.</li>
+          <li>Os teus registos ficam guardados só neste dispositivo, cifrados. Não há conta nem servidor.</li>
+          <li>Nada é rastreado nem enviado para lado nenhum. A app funciona sem internet.</li>
           <li>
-            Using your keyboard’s microphone to dictate may send audio to Apple or Google, depending on your phone’s
-            settings.
+            Usar o microfone do teclado para ditar pode enviar o áudio para a Apple ou a Google, dependendo das
+            definições do telemóvel.
           </li>
         </ul>
       </section>
 
       <section className="card">
-        <h2>Need to talk to someone?</h2>
+        <h2>Precisas de falar com alguém?</h2>
         <p className="small">
-          If you’re in danger or thinking about harming yourself, call your local emergency number. You can find a free,
-          confidential helpline in your country at{' '}
+          Se estiveres em perigo ou a pensar fazer-te mal, liga para o <b>112</b>. Em Portugal, a linha <b>SNS 24</b>{' '}
+          (<a href="tel:808242424">808 24 24 24</a>) tem aconselhamento psicológico. Noutros países, encontras uma linha
+          de apoio gratuita e confidencial em{' '}
           <a href="https://findahelpline.com" target="_blank" rel="noreferrer">
             findahelpline.com
           </a>
@@ -142,11 +143,11 @@ export default function SettingsView(p: Props) {
       </section>
 
       <section className="card">
-        <h2>Delete everything</h2>
+        <h2>Apagar tudo</h2>
         <Wipe />
       </section>
 
-      <p className="muted small center-text">Bruna · version 0.1</p>
+      <p className="muted small center-text">Bruna · versão 0.2</p>
     </div>
   );
 }
@@ -165,7 +166,7 @@ function Passphrase(p: Props & { setNote: (s: string) => void }) {
     setBusy(true);
     try {
       if (has && !(await openKeyring(p.ring, cur))) {
-        setErr('Current passphrase is wrong.');
+        setErr('A palavra-passe atual está errada.');
         return;
       }
       const ring = await makeKeyring(p.dataKey, remove ? null : n1);
@@ -173,7 +174,7 @@ function Passphrase(p: Props & { setNote: (s: string) => void }) {
       p.onRing(ring);
       setOpen(false);
       setCur(''), setN1(''), setN2('');
-      p.setNote(remove ? 'Passphrase removed.' : has ? 'Passphrase changed.' : 'Passphrase set. Your journal is now locked.');
+      p.setNote(remove ? 'Palavra-passe removida.' : has ? 'Palavra-passe alterada.' : 'Palavra-passe definida. O teu diário está agora trancado.');
     } finally {
       setBusy(false);
     }
@@ -183,10 +184,10 @@ function Passphrase(p: Props & { setNote: (s: string) => void }) {
     return (
       <>
         <p className="small">
-          {has ? '🔒 Your journal is locked with a passphrase.' : '🔓 No passphrase yet — anyone using this device can open your journal.'}
+          {has ? '🔒 O teu diário está trancado com palavra-passe.' : '🔓 Ainda sem palavra-passe — quem usar este dispositivo consegue abrir o teu diário.'}
         </p>
         <button className="secondary" onClick={() => setOpen(true)}>
-          {has ? 'Change passphrase' : 'Set a passphrase'}
+          {has ? 'Mudar a palavra-passe' : 'Definir uma palavra-passe'}
         </button>
       </>
     );
@@ -197,31 +198,31 @@ function Passphrase(p: Props & { setNote: (s: string) => void }) {
     <div className="stack">
       {has && (
         <label className="field">
-          <span>Current passphrase</span>
+          <span>Palavra-passe atual</span>
           <input type="password" value={cur} onChange={(e) => setCur(e.target.value)} autoComplete="current-password" />
         </label>
       )}
       <label className="field">
-        <span>New passphrase (6+ characters)</span>
+        <span>Nova palavra-passe (6 ou mais caracteres)</span>
         <input type="password" value={n1} onChange={(e) => setN1(e.target.value)} autoComplete="new-password" />
       </label>
       <label className="field">
-        <span>Type it again</span>
+        <span>Escreve outra vez</span>
         <input type="password" value={n2} onChange={(e) => setN2(e.target.value)} autoComplete="new-password" />
       </label>
-      <p className="small warn">If you forget it, your entries can’t be recovered.</p>
+      <p className="small warn">Se te esqueceres dela, os teus registos não podem ser recuperados.</p>
       {err && <p className="warn">{err}</p>}
       <div className="row">
         <button className="primary" disabled={!ok || busy} onClick={() => save()}>
-          {busy ? 'Saving…' : 'Save'}
+          {busy ? 'A guardar…' : 'Guardar'}
         </button>
         <button className="link" onClick={() => setOpen(false)}>
-          Cancel
+          Cancelar
         </button>
       </div>
       {has && (
         <button className="link danger" disabled={!cur || busy} onClick={() => save(true)}>
-          Remove passphrase instead
+          Remover a palavra-passe
         </button>
       )}
     </div>
@@ -238,8 +239,8 @@ function Restore({ dataKey, setNote }: { dataKey: CryptoKey; setNote: (s: string
     setBusy(true);
     try {
       const n = await restoreBackup(dataKey, b, passphrase);
-      if (n === null) return setNote('That passphrase doesn’t open this backup.');
-      setNote(`Restored ${n} ${n === 1 ? 'entry' : 'entries'}.`);
+      if (n === null) return setNote('Essa palavra-passe não abre esta cópia de segurança.');
+      setNote(`${n === 1 ? 'Recuperado 1 registo' : `Recuperados ${n} registos`}.`);
       setBackup(null);
       setPass('');
     } catch (e) {
@@ -265,26 +266,26 @@ function Restore({ dataKey, setNote }: { dataKey: CryptoKey; setNote: (s: string
             if (b.keyring?.mode === 'passphrase') setBackup(b);
             else await run(b);
           } catch {
-            setNote('That file isn’t a Bruna backup.');
+            setNote('Esse ficheiro não é uma cópia de segurança da Bruna.');
           }
         }}
       />
       {!backup ? (
         <button className="secondary" onClick={() => fileRef.current?.click()}>
-          Restore from backup
+          Recuperar de uma cópia de segurança
         </button>
       ) : (
         <div className="stack">
           <label className="field">
-            <span>Passphrase used when this backup was made</span>
+            <span>Palavra-passe usada quando esta cópia foi feita</span>
             <input type="password" value={pass} onChange={(e) => setPass(e.target.value)} />
           </label>
           <div className="row">
             <button className="primary" disabled={!pass || busy} onClick={() => run(backup, pass)}>
-              {busy ? 'Restoring…' : 'Restore'}
+              {busy ? 'A recuperar…' : 'Recuperar'}
             </button>
             <button className="link" onClick={() => setBackup(null)}>
-              Cancel
+              Cancelar
             </button>
           </div>
         </div>
@@ -299,28 +300,28 @@ function Wipe() {
   if (step === 0)
     return (
       <button className="link danger" onClick={() => setStep(1)}>
-        Delete all entries and settings…
+        Apagar todos os registos e definições…
       </button>
     );
   return (
     <div className="stack">
       <p className="small">
-        This permanently deletes your whole journal from this device. Type <b>delete</b> to confirm.
+        Isto apaga de vez todo o teu diário deste dispositivo. Escreve <b>apagar</b> para confirmar.
       </p>
-      <input value={typed} onChange={(e) => setTyped(e.target.value)} aria-label="Type delete to confirm" />
+      <input value={typed} onChange={(e) => setTyped(e.target.value)} aria-label="Escreve apagar para confirmar" />
       <div className="row">
         <button
           className="danger-btn"
-          disabled={typed.trim().toLowerCase() !== 'delete'}
+          disabled={typed.trim().toLowerCase() !== 'apagar'}
           onClick={async () => {
             await wipeAll();
             location.reload();
           }}
         >
-          Delete everything
+          Apagar tudo
         </button>
         <button className="link" onClick={() => setStep(0)}>
-          Cancel
+          Cancelar
         </button>
       </div>
     </div>
@@ -331,13 +332,13 @@ function Reminder({ setNote }: { setNote: (s: string) => void }) {
   const [time, setTime] = useState('21:00');
   return (
     <section className="card">
-      <h2>Calendar reminder</h2>
+      <h2>Lembrete no calendário</h2>
       <p className="small">
-        An alternative to notifications: a daily reminder in your phone’s calendar. It opens a file your phone asks to add
-        to Calendar.
+        Uma alternativa às notificações: um lembrete diário no calendário do telemóvel. Abre um ficheiro que o telemóvel
+        propõe adicionar ao Calendário.
       </p>
       <label className="field">
-        <span>Remind me every day at</span>
+        <span>Lembrar-me todos os dias às</span>
         <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
       </label>
       <button
@@ -345,11 +346,11 @@ function Reminder({ setNote }: { setNote: (s: string) => void }) {
         onClick={() => {
           const [h, m] = time.split(':').map(Number);
           const url = location.href.split('#')[0];
-          download('bruna-daily-reminder.ics', reminderIcs(h || 21, m || 0, url), 'text/calendar');
-          setNote('Reminder file created. Open it and choose “Add to Calendar”. The reminder only says “Bruna: what did you do today?” — nothing from your journal.');
+          download('bruna-lembrete-diario.ics', reminderIcs(h || 21, m || 0, url), 'text/calendar');
+          setNote('Ficheiro do lembrete criado. Abre-o e escolhe “Adicionar ao Calendário”. O lembrete só diz “Bruna: o que fizeste hoje?” — nada do teu diário.');
         }}
       >
-        Add reminder to my calendar
+        Adicionar lembrete ao calendário
       </button>
     </section>
   );

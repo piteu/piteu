@@ -1,18 +1,19 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { type AnswerValue, type Session, answer, displayAnswer, skipFollowups, start } from '../engine';
 import { daySummary } from '../details';
-import { type Answers, FLOWS, MOODS, NO_ONE, flowById, suggestedFlowId } from '../flows';
+import { type Answers, DAY, FLOWS, MOODS, NO_ONE, flowById, suggestedFlowId } from '../flows';
 import { listEntries, saveEntry } from '../db';
 import { known, yesterdayMissing } from '../memory';
 import type { Entry, Message, Mood, Settings } from '../types';
 
 function greeting(name?: string) {
   const h = new Date().getHours();
-  const part = h < 5 ? 'Hi' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-  return `${part}${name ? `, ${name}` : ''}. What would you like to do?`;
+  const part = h < 5 ? 'Olá' : h < 12 ? 'Bom dia' : h < 20 ? 'Boa tarde' : 'Boa noite';
+  return `${part}${name ? `, ${name}` : ''}. O que te apetece fazer?`;
 }
 
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
+const END_PROMPT = 'Mais alguma coisa? Podes começar outro abaixo, ou voltar quando quiseres.';
 const msg = (from: Message['from'], text: string): Message => ({ from, text, at: Date.now() });
 
 /** Ask the chat to start a check-in, e.g. from a tapped notification. `n` makes each request unique. */
@@ -119,10 +120,10 @@ export default function Chat({
     if (out.session.done) {
       const summary = daySummary(factsOf(out.session));
       if (summary) {
-        next.push(msg('app', 'Here’s your day in a few lines — handy if you want to tell someone. You’ll find it again in Memory.'));
+        next.push(msg('app', 'Aqui está o teu dia em poucas linhas — dá jeito se quiseres contar a alguém. Voltas a encontrá-lo em Memória.'));
         next.push(msg('app', summary));
       }
-      next.push(msg('app', 'Anything else? You can start another below, or come back any time.'));
+      next.push(msg('app', END_PROMPT));
     }
     setSession(out.session);
     setMsgs(next);
@@ -155,7 +156,7 @@ export default function Chat({
 
     // Which day is this about? (Filling in yesterday, or an evening check-in after midnight.)
     const made = new Date(meta.createdAt);
-    const back = a.day === 'Yesterday' ? 1 : a.day === '2 days ago' ? 2 : flow.id === 'evening' && made.getHours() < 4 ? 1 : 0;
+    const back = a.day === DAY.yesterday ? 1 : a.day === DAY.before ? 2 : flow.id === 'evening' && made.getHours() < 4 ? 1 : 0;
     const aboutAt = back
       ? new Date(made.getFullYear(), made.getMonth(), made.getDate() - back, a.day ? 12 : 23).getTime()
       : undefined;
@@ -175,7 +176,7 @@ export default function Chat({
       details: factsOf(s).details,
       aboutAt,
       // Drop the closing "Anything else?" line from the saved entry.
-      messages: messages.filter((m) => !(m.from === 'app' && m.text.startsWith('Anything else?'))),
+      messages: messages.filter((m) => !(m.from === 'app' && m.text === END_PROMPT)),
     };
     try {
       await saveEntry(dataKey, entry);
@@ -232,12 +233,12 @@ export default function Chat({
 
   function askEasier() {
     if (!current?.easier) return;
-    setMsgs((m) => [...m, msg('app', `Let’s try it another way: ${current.easier}`)]);
+    setMsgs((m) => [...m, msg('app', `Vamos tentar de outra forma: ${current.easier}`)]);
     setEasierShown(true);
   }
 
   function stop() {
-    setMsgs((m) => [...m, msg('app', 'No problem — what you wrote so far is saved.')]);
+    setMsgs((m) => [...m, msg('app', 'Não faz mal — o que escreveste até aqui ficou guardado.')]);
     setSession(null);
   }
 
@@ -259,17 +260,17 @@ export default function Chat({
             {showYesterday && (
               <button
                 className="flow-card highlight"
-                onClick={() => begin('log', undefined, { day: 'Yesterday' }, 'Let’s fill in yesterday.')}
+                onClick={() => begin('log', undefined, { day: DAY.yesterday }, 'Vamos preencher o dia de ontem.')}
               >
-                <span className="flow-title">Fill in yesterday</span>
-                <span className="flow-blurb">You haven’t logged what you did yesterday. Takes a few taps.</span>
+                <span className="flow-title">Preencher ontem</span>
+                <span className="flow-blurb">Ainda não registaste o que fizeste ontem. São só uns toques.</span>
               </button>
             )}
             {flowsOrdered.map((f) => (
               <button key={f.id} className="flow-card" onClick={() => begin(f.id)}>
                 <span className="flow-title">
                   {f.title}
-                  {f.id === suggested && <span className="badge">Suggested</span>}
+                  {f.id === suggested && <span className="badge">Sugerido</span>}
                 </span>
                 <span className="flow-blurb">
                   {f.blurb} · ~{f.minutes} min
@@ -281,11 +282,11 @@ export default function Chat({
         <div ref={endRef} />
       </div>
 
-      {saveErr && <div className="savebar warn">Couldn’t save just now. Your words are still here — try again in a moment.</div>}
+      {saveErr && <div className="savebar warn">Não foi possível guardar agora. As tuas palavras continuam aqui — tenta daqui a pouco.</div>}
 
       <div className="composer">
         {current?.kind === 'mood' && (
-          <div className="moods" role="group" aria-label="Mood">
+          <div className="moods" role="group" aria-label="Humor">
             {MOODS.map((m) => (
               <button key={m.value} className="mood" onClick={() => send(m.value)}>
                 <span className="face" aria-hidden>{m.face}</span>
@@ -330,19 +331,19 @@ export default function Chat({
               autoFocus
               value={adding}
               onChange={(e) => setAdding(e.target.value)}
-              placeholder={current.id === 'people' ? 'Their name' : 'e.g. Climbing'}
+              placeholder={current.id === 'people' ? 'O nome' : 'p. ex. Escalada'}
               autoCapitalize={current.id === 'people' ? 'words' : 'sentences'}
               aria-label={current.other}
               maxLength={40}
             />
             <button className="primary small" disabled={!adding.trim()}>
-              Add
+              Acrescentar
             </button>
           </form>
         )}
 
         {current?.kind === 'write' && !current.isNudge && current.starters && !text && (
-          <div className="chips starters" aria-label="Sentence starters">
+          <div className="chips starters" aria-label="Inícios de frase">
             {current.starters.map((s) => (
               <button key={s} className="chip ghost" onClick={() => applyStarter(s)}>
                 {s}
@@ -355,17 +356,17 @@ export default function Chat({
           <div className="actions">
             {current.kind === 'choice' && current.multi && (
               <button className="primary small" onClick={() => send(picked.length ? picked : null)}>
-                {picked.length ? 'Done' : 'Skip'}
+                {picked.length ? 'Feito' : 'Saltar'}
               </button>
             )}
             {current.kind === 'write' && current.easier && !easierShown && (
               <button className="link small" onClick={askEasier}>
-                Ask me differently
+                Pergunta de outra forma
               </button>
             )}
             {!(current.kind === 'choice' && current.multi) && (
               <button className="link small" onClick={() => send(null)}>
-                Skip
+                Saltar
               </button>
             )}
             {current.about && (
@@ -376,11 +377,11 @@ export default function Chat({
                   finish(skipFollowups(session, opts), msgs, entryMeta);
                 }}
               >
-                No more questions
+                Chega de perguntas
               </button>
             )}
             <button className="link small" onClick={stop}>
-              Stop here
+              Parar aqui
             </button>
           </div>
         )}
@@ -395,10 +396,10 @@ export default function Chat({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submitText();
               }}
-              placeholder={idle ? 'Or just start typing…' : 'A few words is fine…'}
-              aria-label="Your answer"
+              placeholder={idle ? 'Ou começa simplesmente a escrever…' : 'Bastam umas palavras…'}
+              aria-label="A tua resposta"
             />
-            <button className="send" onClick={submitText} disabled={!text.trim()} aria-label="Send">
+            <button className="send" onClick={submitText} disabled={!text.trim()} aria-label="Enviar">
               ↑
             </button>
           </div>

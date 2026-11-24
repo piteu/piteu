@@ -1,4 +1,5 @@
 import { ACTIVITIES, type Ctx, MOODS, NO_ONE } from './flows';
+import { LOCALE } from './locale';
 
 // ---------------------------------------------------------------------------
 // Follow-up questions about the specific things you did, and turning your
@@ -15,110 +16,110 @@ export interface Followup {
 type Q = Omit<Followup, 'item'>;
 
 const BANK: Record<string, Q> = {
-  '💼 Work': {
-    text: 'You worked — what did you work on?',
-    starters: ['I worked on…', 'I had a meeting about…', 'I finished…', 'It was busy because…'],
-    easier: 'Was work busy, calm, or somewhere in between?',
+  '💼 Trabalho': {
+    text: 'Trabalhaste — em que é que trabalhaste?',
+    starters: ['Trabalhei em…', 'Tive uma reunião sobre…', 'Terminei…', 'Foi um dia cheio porque…'],
+    easier: 'O trabalho foi agitado, calmo, ou algures no meio?',
   },
-  '📚 Study': {
-    text: 'What did you study or learn?',
-    starters: ['I studied…', 'I learned that…', 'I struggled with…'],
+  '📚 Estudo': {
+    text: 'O que estudaste ou aprendeste?',
+    starters: ['Estudei…', 'Aprendi que…', 'Tive dificuldade com…'],
   },
-  '🏃 Exercise': {
-    text: 'What exercise did you do, and how did it feel?',
-    starters: ['I went to…', 'I did…', 'My body felt…'],
+  '🏃 Exercício': {
+    text: 'Que exercício fizeste, e como te sentiste?',
+    starters: ['Fui a…', 'Fiz…', 'O corpo sentiu-se…'],
   },
-  '🚶 Walk': {
-    text: 'You went for a walk — where did you go?',
-    starters: ['I walked to…', 'Around…', 'On the way I saw…'],
-    easier: 'Did you walk somewhere specific, or just around?',
+  '🚶 Caminhada': {
+    text: 'Foste dar uma caminhada — por onde foste?',
+    starters: ['Caminhei até…', 'Andei por…', 'Pelo caminho vi…'],
+    easier: 'Foste a algum sítio em especial, ou só dar uma volta?',
   },
-  '🍳 Cooked': {
-    text: 'What did you cook?',
-    starters: ['I made…', 'It turned out…', 'I tried…'],
+  '🍳 Cozinhei': {
+    text: 'O que cozinhaste?',
+    starters: ['Fiz…', 'Ficou…', 'Experimentei…'],
   },
-  '🍽️ Ate out': {
-    text: 'Where did you eat, and what did you have?',
-    starters: ['We went to…', 'I had…', 'The food was…'],
+  '🍽️ Comi fora': {
+    text: 'Onde comeste, e o que comeste?',
+    starters: ['Fomos a…', 'Comi…', 'A comida estava…'],
   },
-  '🛒 Shopping': {
-    text: 'What did you buy, and where?',
-    starters: ['I bought…', 'At…', 'I was looking for…'],
+  '🛒 Compras': {
+    text: 'O que compraste, e onde?',
+    starters: ['Comprei…', 'Em…', 'Andava à procura de…'],
   },
-  '🧹 Chores': {
-    text: 'What did you get done at home?',
-    starters: ['I cleaned…', 'I finally…', 'I did the…'],
+  '🧹 Tarefas de casa': {
+    text: 'O que conseguiste fazer em casa?',
+    starters: ['Limpei…', 'Finalmente…', 'Tratei da…'],
   },
-  '🧾 Errands': {
-    text: 'What errands did you run?',
-    starters: ['I went to…', 'I sorted out…', 'I picked up…'],
+  '🧾 Recados': {
+    text: 'Que recados trataste?',
+    starters: ['Fui a…', 'Resolvi…', 'Fui buscar…'],
   },
-  '👫 Saw friends': {
-    text: 'Which friends did you see, and what did you do together?',
-    starters: ['I saw…', 'We…', 'We talked about…'],
+  '👫 Estive com amigos': {
+    text: 'Com que amigos estiveste, e o que fizeram juntos?',
+    starters: ['Estive com…', 'Fomos…', 'Falámos sobre…'],
   },
-  '👨‍👩‍👧 Family time': {
-    text: 'What did you do with your family?',
-    starters: ['We…', 'I spent time with…', 'We talked about…'],
+  '👨‍👩‍👧 Família': {
+    text: 'O que fizeste com a tua família?',
+    starters: ['Fomos…', 'Passei tempo com…', 'Falámos sobre…'],
   },
-  '📞 Called someone': {
-    text: 'Who did you call, and what did you talk about?',
-    starters: ['I called…', 'We talked about…', 'They told me…'],
+  '📞 Liguei a alguém': {
+    text: 'A quem ligaste, e de que falaram?',
+    starters: ['Liguei a…', 'Falámos sobre…', 'Contou-me que…'],
   },
-  '❤️ Date': {
-    text: 'Where did you go on your date, and what did you do?',
-    starters: ['We went to…', 'We…', 'The best part was…'],
+  '❤️ Encontro': {
+    text: 'Onde foi o encontro, e o que fizeram?',
+    starters: ['Fomos a…', 'Nós…', 'O melhor foi…'],
   },
-  '🩺 Doctor / health': {
-    text: 'What was the appointment for? What did they say?',
-    starters: ['It was for…', 'They said…', 'The next step is…', 'I need to…'],
-    easier: 'Who did you see — a doctor, dentist, someone else?',
+  '🩺 Médico / saúde': {
+    text: 'Era uma consulta de quê? O que te disseram?',
+    starters: ['Era por causa de…', 'Disseram-me que…', 'O próximo passo é…', 'Tenho de…'],
+    easier: 'Com quem foi — médico, dentista, outra pessoa?',
   },
   '🎨 Hobby': {
-    text: 'What did you do for your hobby?',
-    starters: ['I worked on…', 'I made…', 'I practised…'],
+    text: 'O que fizeste no teu hobby?',
+    starters: ['Trabalhei em…', 'Fiz…', 'Pratiquei…'],
   },
-  '📖 Read': {
-    text: 'What did you read?',
-    starters: ['I read…', 'It was about…', 'I liked the part where…'],
+  '📖 Li': {
+    text: 'O que leste?',
+    starters: ['Li…', 'Era sobre…', 'Gostei da parte em que…'],
   },
-  '📺 Watched something': {
-    text: 'What did you watch? Was it good?',
-    starters: ['I watched…', 'It was about…', 'It was…'],
+  '📺 Série / filme': {
+    text: 'O que viste? Era bom?',
+    starters: ['Vi…', 'Era sobre…', 'Achei…'],
   },
-  '🎮 Games': {
-    text: 'What did you play?',
-    starters: ['I played…', 'With…', 'I managed to…'],
+  '🎮 Jogos': {
+    text: 'A que jogaste?',
+    starters: ['Joguei…', 'Com…', 'Consegui…'],
   },
-  '🚌 Travelled': {
-    text: 'Where did you go, and why?',
-    starters: ['I went to…', 'To visit…', 'The trip was…'],
+  '🚌 Viagem': {
+    text: 'Para onde foste, e porquê?',
+    starters: ['Fui a…', 'Para visitar…', 'A viagem foi…'],
   },
-  '🎉 Went out': {
-    text: 'Where did you go, and who with?',
-    starters: ['We went to…', 'I went with…', 'The best part was…'],
+  '🎉 Saí': {
+    text: 'Onde foste, e com quem?',
+    starters: ['Fomos a…', 'Fui com…', 'O melhor foi…'],
   },
 };
 
 // Most worth asking about first: things that are easy to forget and useful to tell people.
 const NOTABLE = new Set([
-  '🩺 Doctor / health', '❤️ Date', '🎉 Went out', '🚌 Travelled', '🍽️ Ate out',
-  '👨‍👩‍👧 Family time', '👫 Saw friends', '📞 Called someone',
+  '🩺 Médico / saúde', '❤️ Encontro', '🎉 Saí', '🚌 Viagem', '🍽️ Comi fora',
+  '👨‍👩‍👧 Família', '👫 Estive com amigos', '📞 Liguei a alguém',
 ]);
-const NO_FOLLOWUP = new Set(['😴 Rested']);
+const NO_FOLLOWUP = new Set(['😴 Descansei']);
 // Covered by the person questions when names were picked.
-const COVERED_BY_PEOPLE = new Set(['👫 Saw friends', '📞 Called someone']);
+const COVERED_BY_PEOPLE = new Set(['👫 Estive com amigos', '📞 Liguei a alguém']);
 
 const personQ = (p: string): Q => ({
-  text: `You saw or talked to ${p} — what did you talk about, or do together?`,
-  starters: ['We talked about…', `${p} told me…`, 'We…', 'I told them…'],
-  easier: `Where did you see ${p}, or how did you talk (call, message)?`,
+  text: `Estiveste ou falaste com ${p} — de que falaram, ou o que fizeram juntos?`,
+  starters: ['Falámos sobre…', `${p} contou-me…`, 'Fomos…', 'Contei-lhe…'],
+  easier: `Onde estiveste com ${p}, ou como falaram (chamada, mensagem)?`,
 });
 
 const customQ = (a: string): Q => ({
-  text: `Tell me about ${a.toLowerCase()} — what happened?`,
-  starters: ['I…', 'It was…', 'The best part was…'],
-  easier: `Where did you do ${a.toLowerCase()}, and who with?`,
+  text: `Fala-me de “${a}” — como foi?`,
+  starters: ['Eu…', 'Foi…', 'O melhor foi…'],
+  easier: `Onde foi, e com quem?`,
 });
 
 /** Pick the most useful follow-up questions for what you tapped. */
@@ -142,12 +143,12 @@ export function followupsFor(c: Ctx, max: number): Followup[] {
 // ---------- "Tell someone about my day" ----------
 
 const PHRASE: Record<string, string> = {
-  '💼 Work': 'Worked', '📚 Study': 'Studied', '🏃 Exercise': 'Exercised', '🚶 Walk': 'Went for a walk',
-  '🍳 Cooked': 'Cooked', '🍽️ Ate out': 'Ate out', '🛒 Shopping': 'Went shopping', '🧹 Chores': 'Did chores at home',
-  '🧾 Errands': 'Ran errands', '👫 Saw friends': 'Saw friends', '👨‍👩‍👧 Family time': 'Spent time with family',
-  '📞 Called someone': 'Called someone', '❤️ Date': 'Went on a date', '🩺 Doctor / health': 'Had a health appointment',
-  '🎨 Hobby': 'Did my hobby', '📖 Read': 'Read', '📺 Watched something': 'Watched something', '🎮 Games': 'Played games',
-  '🚌 Travelled': 'Travelled', '🎉 Went out': 'Went out', '😴 Rested': 'Rested',
+  '💼 Trabalho': 'Trabalhei', '📚 Estudo': 'Estudei', '🏃 Exercício': 'Fiz exercício', '🚶 Caminhada': 'Fui dar uma caminhada',
+  '🍳 Cozinhei': 'Cozinhei', '🍽️ Comi fora': 'Comi fora', '🛒 Compras': 'Fui às compras', '🧹 Tarefas de casa': 'Fiz tarefas de casa',
+  '🧾 Recados': 'Tratei de recados', '👫 Estive com amigos': 'Estive com amigos', '👨‍👩‍👧 Família': 'Estive com a família',
+  '📞 Liguei a alguém': 'Liguei a alguém', '❤️ Encontro': 'Tive um encontro', '🩺 Médico / saúde': 'Tive uma consulta',
+  '🎨 Hobby': 'Dediquei-me ao meu hobby', '📖 Li': 'Li', '📺 Série / filme': 'Vi uma série ou um filme', '🎮 Jogos': 'Joguei',
+  '🚌 Viagem': 'Viajei', '🎉 Saí': 'Saí', '😴 Descansei': 'Descansei',
 };
 
 export interface DayFacts {
@@ -159,28 +160,27 @@ export interface DayFacts {
 }
 
 const oneLine = (s: string) => s.trim().replace(/\s*\n+\s*/g, ' ');
-const joinNames = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+const joinNames = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} e ${xs[xs.length - 1]}`);
+const stripEmoji = (s: string) => s.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, '');
 
 /** A few plain sentences about the day — something you can read out or send to someone. */
 export function daySummary(f: DayFacts): string {
   const detail = (item: string) => f.details.filter((d) => d.item === item).map((d) => oneLine(d.text)).join(' ');
   const lines: string[] = [];
   for (const a of f.activities) {
-    const phrase = PHRASE[a] ?? a.charAt(0).toUpperCase() + a.slice(1);
+    const phrase = PHRASE[a] ?? stripEmoji(a);
     const d = detail(a);
     lines.push(`• ${phrase}${d ? `: ${d}` : ''}`);
   }
   const people = f.people.filter((p) => p !== NO_ONE);
   const withDetail = people.filter((p) => detail(p));
   const without = people.filter((p) => !detail(p));
-  for (const p of withDetail) lines.push(`• Saw or talked to ${p}: ${detail(p)}`);
-  if (without.length) lines.push(`• ${withDetail.length ? 'Also saw' : 'Saw'} or talked to ${joinNames(without)}`);
+  for (const p of withDetail) lines.push(`• Estive ou falei com ${p}: ${detail(p)}`);
+  if (without.length) lines.push(`• ${withDetail.length ? 'Também estive' : 'Estive'} ou falei com ${joinNames(without)}`);
   if (!lines.length) return '';
 
-  const head = f.ts
-    ? `What I did on ${new Date(f.ts).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}:`
-    : 'What I did:';
+  const date = f.ts ? new Date(f.ts).toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' }) : '';
+  const head = date ? `${date.charAt(0).toUpperCase() + date.slice(1)} — o que fiz:` : 'O que fiz:';
   const mood = f.mood ? MOODS[Math.min(4, Math.max(0, Math.round(f.mood) - 1))] : undefined;
-  const article = mood && /^[aeiou]/i.test(mood.label) ? 'an' : 'a';
-  return [head, ...lines, ...(mood ? [`Overall it was ${article} ${mood.label.toLowerCase()} day ${mood.face}`] : [])].join('\n');
+  return [head, ...lines, ...(mood ? [`No geral, foi um dia ${mood.day} ${mood.face}`] : [])].join('\n');
 }

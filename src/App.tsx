@@ -6,6 +6,7 @@ import { DEFAULT_SETTINGS } from './types';
 import Setup from './components/Setup';
 import Lock from './components/Lock';
 import Chat, { type ChatRequest } from './components/Chat';
+import { DAY } from './flows';
 import Journal from './components/Journal';
 import SettingsView from './components/SettingsView';
 import Insights from './components/Insights';
@@ -51,7 +52,7 @@ export default function App() {
       setChatRequest({ flow: 'evening', n });
     } else if (go === 'yesterday') {
       setTab('today');
-      setChatRequest({ flow: 'log', preset: { day: 'Yesterday' }, intro: 'Let’s fill in yesterday.', n });
+      setChatRequest({ flow: 'log', preset: { day: DAY.yesterday }, intro: 'Vamos preencher o dia de ontem.', n });
     } else if (go === 'week') {
       setTab('insights');
     } else if (go === 'practice') {
@@ -152,12 +153,12 @@ export default function App() {
           />
         )}
       </main>
-      <nav className="tabs" aria-label="Sections">
-        <TabButton active={tab === 'today'} onClick={() => setTab('today')} icon="💬" label="Today" />
-        <TabButton active={tab === 'journal'} onClick={() => setTab('journal')} icon="📖" label="Journal" />
-        <TabButton active={tab === 'memory'} onClick={() => setTab('memory')} icon="🧠" label="Memory" />
-        <TabButton active={tab === 'insights'} onClick={() => setTab('insights')} icon="📈" label="Insights" />
-        <TabButton active={tab === 'settings'} onClick={() => setTab('settings')} icon="⚙️" label="Settings" />
+      <nav className="tabs" aria-label="Secções">
+        <TabButton active={tab === 'today'} onClick={() => setTab('today')} icon="💬" label="Hoje" />
+        <TabButton active={tab === 'journal'} onClick={() => setTab('journal')} icon="📖" label="Diário" />
+        <TabButton active={tab === 'memory'} onClick={() => setTab('memory')} icon="🧠" label="Memória" />
+        <TabButton active={tab === 'insights'} onClick={() => setTab('insights')} icon="📈" label="Resumo" />
+        <TabButton active={tab === 'settings'} onClick={() => setTab('settings')} icon="⚙️" label="Definições" />
       </nav>
     </div>
   );

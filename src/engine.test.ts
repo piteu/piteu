@@ -7,14 +7,14 @@ describe('engine', () => {
     let o = start('quick', { name: 'Ana' });
     expect(o.session.current?.kind).toBe('mood');
     o = answer(o.session, 2);
-    expect(o.session.current?.options).toContain('Anxious');
-    o = answer(o.session, ['Anxious']);
-    o = answer(o.session, ['Work']);
-    expect(o.said[0]).toBe('What happened that left you feeling anxious?');
-    o = answer(o.session, 'a meeting');
+    expect(o.session.current?.options).toContain('Ansiedade');
+    o = answer(o.session, ['Ansiedade']);
+    o = answer(o.session, ['Trabalho']);
+    expect(o.said[0]).toBe('O que aconteceu para sentires ansiedade?');
+    o = answer(o.session, 'uma reunião');
     expect(o.session.current?.isNudge).toBe(true);
-    o = answer(o.session, 'my boss criticised my work in front of everyone');
-    expect(o.session.answers.what).toBe('a meeting\nmy boss criticised my work in front of everyone');
+    o = answer(o.session, 'o meu chefe criticou o meu trabalho à frente de todos');
+    expect(o.session.answers.what).toBe('uma reunião\no meu chefe criticou o meu trabalho à frente de todos');
     o = answer(o.session, 'ok', { name: 'Ana' }); // short again — but no second nudge
     expect(o.session.current).toBeNull();
     expect(o.session.done).toBe(true);
@@ -24,10 +24,10 @@ describe('engine', () => {
   it('good mood asks about what made it good', () => {
     let o = start('quick');
     o = answer(o.session, 5);
-    expect(o.session.current?.options).toContain('Happy');
+    expect(o.session.current?.options).toContain('Alegria');
     o = answer(o.session, null);
     o = answer(o.session, null);
-    expect(o.said[0]).toMatch(/^Nice!/);
+    expect(o.said[0]).toMatch(/^Que bom!/);
   });
 
   it('skips nudges when disabled', () => {
@@ -44,7 +44,7 @@ describe('engine', () => {
     o = answer(o.session, null);
     o = answer(o.session, null);
     o = answer(o.session, null);
-    o = answer(o.session, 'Not really');
+    o = answer(o.session, 'Nem por isso');
     expect(o.session.current?.id).toBe('tomorrow');
   });
 
@@ -61,7 +61,7 @@ describe('engine', () => {
   });
 
   it('formats answers', () => {
-    expect(displayAnswer({ kind: 'mood', id: 'mood', stepIndex: 0, text: '' }, 4)).toBe('🙂 Good');
+    expect(displayAnswer({ kind: 'mood', id: 'mood', stepIndex: 0, text: '' }, 4)).toBe('🙂 Bem');
     expect(displayAnswer({ kind: 'choice', id: 'x', stepIndex: 0, text: '' }, ['A', 'B'])).toBe('A, B');
   });
 });
@@ -69,13 +69,13 @@ describe('engine', () => {
 describe('what I did', () => {
   it('offers your own activities and people, and skips the day question when preset', () => {
     const known = { activities: ['Climbing'], people: ['Rita'] };
-    let o = start('log', { known }, { day: 'Yesterday' });
+    let o = start('log', { known }, { day: 'Ontem' });
     expect(o.session.current?.id).toBe('activities');
-    expect(o.said[0]).toContain('yesterday');
+    expect(o.said[0]).toContain('ontem');
     expect(o.session.current?.options?.[0]).toBe('Climbing');
     expect(o.session.current?.other).toBeTruthy();
     o = answer(o.session, ['Climbing'], { known });
-    expect(o.session.current?.options).toEqual(['Rita', 'No one']);
+    expect(o.session.current?.options).toEqual(['Rita', 'Ninguém']);
   });
   it('asks which day when not preset', () => {
     expect(start('log').session.current?.id).toBe('day');

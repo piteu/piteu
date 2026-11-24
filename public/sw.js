@@ -1,6 +1,6 @@
 // Minimal offline cache. Pages: network first (so updates arrive), falling back
 // to cache. Built assets have hashed names, so they're cached forever.
-const CACHE = 'bruna-v2';
+const CACHE = 'bruna-v3';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest', './icon.svg'])));
@@ -56,7 +56,7 @@ self.addEventListener('push', (e) => {
   const title = data.title || 'Bruna';
   e.waitUntil(
     self.registration.showNotification(title, {
-      body: data.body || 'What did you do today? 📝',
+      body: data.body || 'O que fizeste hoje? 📝',
       icon: './icon-192.png',
       badge: './icon-192.png',
       tag: data.kind || 'bruna',

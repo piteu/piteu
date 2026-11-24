@@ -1,3 +1,4 @@
+import { LOCALE } from '../locale';
 import { useEffect, useMemo, useState } from 'react';
 import { deleteEntry, listEntries } from '../db';
 import { dayKey, formatDay, formatTime, moodFace, writtenTexts } from '../export';
@@ -48,17 +49,17 @@ export default function Journal({ dataKey }: { dataKey: CryptoKey }) {
     );
   }
 
-  if (!entries) return <div className="center muted">Opening your journal…</div>;
+  if (!entries) return <div className="center muted">A abrir o teu diário…</div>;
 
   return (
     <div className="page">
-      <h1>Journal</h1>
+      <h1>Diário</h1>
       <MoodStrip entries={entries} />
       {entries.length > 0 && (
-        <input className="search" type="search" placeholder="Search your entries" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="search" type="search" placeholder="Pesquisar nos teus registos" value={q} onChange={(e) => setQ(e.target.value)} />
       )}
-      {entries.length === 0 && <p className="muted">Nothing here yet. Your check-ins will show up here.</p>}
-      {entries.length > 0 && groups.length === 0 && <p className="muted">No entries match “{q}”.</p>}
+      {entries.length === 0 && <p className="muted">Ainda não há nada. Os teus check-ins vão aparecer aqui.</p>}
+      {entries.length > 0 && groups.length === 0 && <p className="muted">Nenhum registo corresponde a “{q}”.</p>}
       {groups.map((g) => (
         <section key={g.day} className="day">
           <h2>{g.label}</h2>
@@ -102,11 +103,11 @@ function MoodStrip({ entries }: { entries: Entry[] }) {
 
   if (!entries.some((e) => e.mood)) return null;
   return (
-    <div className="moodstrip" aria-label="Mood over the last two weeks">
+    <div className="moodstrip" aria-label="Humor nas últimas duas semanas">
       {days.map((d) => (
-        <div key={d.ts} className="moodday" title={new Date(d.ts).toLocaleDateString()}>
+        <div key={d.ts} className="moodday" title={new Date(d.ts).toLocaleDateString(LOCALE)}>
           <span className={`dot m${d.avg ?? 0}`}>{d.avg ? moodFace(d.avg) : ''}</span>
-          <span className="dow">{new Date(d.ts).toLocaleDateString(undefined, { weekday: 'narrow' })}</span>
+          <span className="dow">{new Date(d.ts).toLocaleDateString(LOCALE, { weekday: 'narrow' })}</span>
         </div>
       ))}
     </div>
@@ -118,7 +119,7 @@ function EntryView({ entry, onBack, onDelete }: { entry: Entry; onBack: () => vo
   return (
     <div className="page">
       <button className="link back" onClick={onBack}>
-        ← Journal
+        ← Diário
       </button>
       <h1>
         {entry.flowTitle} {moodFace(entry.mood)}
@@ -126,7 +127,7 @@ function EntryView({ entry, onBack, onDelete }: { entry: Entry; onBack: () => vo
       <p className="muted">
         {formatDay(entry.createdAt)} · {formatTime(entry.createdAt)}
       </p>
-      {entry.aboutAt && <p className="muted small">About {formatDay(entry.aboutAt).toLowerCase()}, written later.</p>}
+      {entry.aboutAt && <p className="muted small">Sobre {formatDay(entry.aboutAt).toLowerCase()}, escrito mais tarde.</p>}
       {(entry.feelings?.length || entry.topics?.length || entry.activities?.length || entry.people?.length) ? (
         <div className="tags">
           {[...(entry.activities ?? []), ...(entry.people ?? []), ...(entry.feelings ?? []), ...(entry.topics ?? [])].map((t) => (
@@ -143,13 +144,13 @@ function EntryView({ entry, onBack, onDelete }: { entry: Entry; onBack: () => vo
       </div>
       {!confirm ? (
         <button className="link danger" onClick={() => setConfirm(true)}>
-          Delete this entry
+          Apagar este registo
         </button>
       ) : (
         <div className="confirm">
-          <span>Delete for good?</span>
-          <button className="danger-btn" onClick={onDelete}>Delete</button>
-          <button className="link" onClick={() => setConfirm(false)}>Cancel</button>
+          <span>Apagar de vez?</span>
+          <button className="danger-btn" onClick={onDelete}>Apagar</button>
+          <button className="link" onClick={() => setConfirm(false)}>Cancelar</button>
         </div>
       )}
     </div>
