@@ -5,6 +5,7 @@ import { type Answers, DAY, MOODS, NO_ONE, flowById, suggestedFlowId } from '../
 import { listEntries, saveEntry } from '../db';
 import { known, yesterdayMissing } from '../memory';
 import Home, { FlowGrid } from './Home';
+import { useDictation } from '../dictation';
 import type { Entry, Message, Mood, Settings } from '../types';
 
 
@@ -51,6 +52,34 @@ export default function Chat({
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chipsRef = useRef<HTMLDivElement>(null);
+  const dict = useDictation(text, setText);
+  const [micHint, setMicHint] = useState(false);
+  // Shown the first time you dictate: who turns your voice into text.
+  const [voiceNote, setVoiceNote] = useState(() => {
+    try {
+      return !localStorage.getItem('bruna-voice-note');
+    } catch {
+      return true;
+    }
+  });
+
+  function toggleMic() {
+    if (!dict.supported) {
+      // This phone can't dictate inside the app: point to the keyboard's microphone instead.
+      setMicHint(true);
+      inputRef.current?.focus();
+      return;
+    }
+    if (dict.listening) return dict.stop();
+    dict.start();
+    if (voiceNote) {
+      try {
+        localStorage.setItem('bruna-voice-note', '1');
+      } catch {
+        /* fine */
+      }
+    }
+  }
 
   const current = session?.current ?? null;
   const idle = !session || session.done;
@@ -79,6 +108,13 @@ export default function Chat({
     if (showingHome) logRef.current?.scrollTo({ top: 0 });
     else endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [msgs, current, showingHome]);
+
+  // Stop dictating when the question changes.
+  useEffect(() => {
+    if (dict.listening) dict.stop();
+    setMicHint(false);
+    setVoiceNote((v) => v && !dict.listening);
+  }, [current]);
 
   // Grow the text box with its content.
   useLayoutEffect(() => {
@@ -221,6 +257,8 @@ export default function Chat({
   }
 
   function submitText() {
+    if (dict.listening) dict.stop();
+    setMicHint(false);
     const t = text.trim();
     if (!t) return;
     if (idle) begin('free', t);
@@ -383,6 +421,21 @@ export default function Chat({
           </div>
         )}
 
+        {(idle || current?.kind === 'write') && dict.listening && (
+          <p className="voice-status" role="status">
+            <span className="rec-dot" aria-hidden /> A ouvir… fala à vontade e toca em ■ quando acabares.
+            {voiceNote && (
+              <span className="muted"> O teu telemóvel (Apple ou Google) transforma a voz em texto; o texto fica só aqui.</span>
+            )}
+          </p>
+        )}
+        {(idle || current?.kind === 'write') && dict.error && <p className="voice-status warn">{dict.error}</p>}
+        {(idle || current?.kind === 'write') && micHint && !dict.listening && (
+          <p className="voice-status">
+            Para ditar, toca no <b>🎤 do teclado</b> (ao lado da barra de espaço) e fala. No iPhone, se não o vires, ativa
+            o ditado em Definições → Geral → Teclado.
+          </p>
+        )}
         {(idle || current?.kind === 'write') && (
           <div className="inputrow">
             <textarea
@@ -396,6 +449,14 @@ export default function Chat({
               placeholder={idle ? 'Ou começa simplesmente a escrever…' : 'Bastam umas palavras…'}
               aria-label="A tua resposta"
             />
+            <button
+              className={`mic ${dict.listening ? 'on' : ''}`}
+              onClick={toggleMic}
+              aria-label={dict.listening ? 'Parar de ditar' : 'Ditar'}
+              aria-pressed={dict.listening}
+            >
+              {dict.listening ? '■' : '🎤'}
+            </button>
             <button className="send" onClick={submitText} disabled={!text.trim()} aria-label="Enviar">
               ↑
             </button>

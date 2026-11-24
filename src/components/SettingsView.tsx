@@ -123,8 +123,8 @@ export default function SettingsView(p: Props) {
           <li>Os teus registos ficam guardados só neste dispositivo, cifrados. Não há conta nem servidor.</li>
           <li>Nada é rastreado nem enviado para lado nenhum. A app funciona sem internet.</li>
           <li>
-            Usar o microfone do teclado para ditar pode enviar o áudio para a Apple ou a Google, dependendo das
-            definições do telemóvel.
+            Ditar (com o botão 🎤 da Bruna ou o do teclado) envia o áudio para o serviço de voz do telemóvel — Apple ou
+            Google — que o transforma em texto. Só o texto fica guardado, e só neste dispositivo.
           </li>
         </ul>
       </section>
