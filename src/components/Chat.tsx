@@ -1,10 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { type AnswerValue, type Session, answer, displayAnswer, skipFollowups, start } from '../engine';
 import { daySummary } from '../details';
-import { type Answers, DAY, MOODS, NO_ONE, flowById, suggestedFlowId } from '../flows';
+import { type Answers, DAY, MOODS, NO_ONE, flowById } from '../flows';
 import { listEntries, saveEntry } from '../db';
-import { known, yesterdayMissing } from '../memory';
-import Home, { FlowGrid } from './Home';
+import { known } from '../memory';
+import { FlowGrid } from './Home';
 import { useDictation } from '../dictation';
 import type { Entry, Message, Mood, Settings } from '../types';
 
@@ -24,15 +24,14 @@ export interface ChatRequest {
 export default function Chat({
   dataKey,
   settings,
-  active,
   request,
-  onGo,
+  onClose,
 }: {
   dataKey: CryptoKey;
   settings: Settings;
-  active: boolean;
   request?: ChatRequest | null;
-  onGo: (tab: 'memory' | 'week' | 'insights') => void;
+  /** Back to the main page. Whatever was answered so far is already saved. */
+  onClose: () => void;
 }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -84,14 +83,13 @@ export default function Chat({
   const current = session?.current ?? null;
   const idle = !session || session.done;
 
-  // Refresh what we know from past entries whenever this tab is shown.
+  // What we know from past entries (your people and activities), loaded when writing opens.
   useEffect(() => {
-    if (active)
-      listEntries(dataKey)
-        .then(setEntries)
-        .catch(() => {})
-        .finally(() => setLoaded(true));
-  }, [active, dataKey]);
+    listEntries(dataKey)
+      .then(setEntries)
+      .catch(() => {})
+      .finally(() => setLoaded(true));
+  }, [dataKey]);
 
   // Start a requested check-in once past entries are loaded (so your people and activities are there),
   // unless one is already in progress.
@@ -102,12 +100,10 @@ export default function Chat({
     begin(request.flow, undefined, request.preset, request.intro);
   }, [request, loaded]);
 
-  // In a conversation, follow the latest message; on the main page, stay at the top.
-  const showingHome = (!session || session.done) && msgs.length === 0;
+  // Follow the latest message.
   useEffect(() => {
-    if (showingHome) logRef.current?.scrollTo({ top: 0 });
-    else endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [msgs, current, showingHome]);
+    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [msgs, current]);
 
   // Stop dictating when the question changes.
   useEffect(() => {
@@ -282,12 +278,17 @@ export default function Chat({
     setSession(null);
   }
 
-  const suggested = suggestedFlowId();
-  const showYesterday = entries.length > 0 && yesterdayMissing(entries);
-  const onHome = idle && msgs.length === 0;
+  const title = session ? flowById(session.flowId).title : 'Escrever';
 
   return (
     <div className="chat">
+      <header className="chat-head">
+        <button className="link back" onClick={onClose}>
+          ← Início
+        </button>
+        <span className="chat-title">{title}</span>
+        <span className="chat-saved muted small">{session && !idle ? 'Guardado à medida que respondes' : ''}</span>
+      </header>
       <div className="messages" role="log" aria-live="polite" ref={logRef}>
         {msgs.map((m, i) => (
           <div key={i} className={`bubble from-${m.from}`}>
@@ -295,23 +296,13 @@ export default function Chat({
           </div>
         ))}
 
-        {onHome && (
-          <Home
-            name={settings.name}
-            entries={entries}
-            suggested={suggested}
-            showYesterday={showYesterday}
-            onStart={(id, preset, intro) => begin(id, undefined, preset, intro)}
-            onGo={onGo}
-          />
-        )}
-
-        {idle && !onHome && (
+        {idle && msgs.length > 0 && (
           <div className="after">
-            <FlowGrid onStart={(id) => begin(id)} />
-            <button className="link small back-home" onClick={() => setMsgs([])}>
-              ← Voltar ao início
+            <button className="primary block" onClick={onClose}>
+              Voltar ao início
             </button>
+            <p className="muted small center-text">Ou faz outro check-in:</p>
+            <FlowGrid onStart={(id) => begin(id)} />
           </div>
         )}
         <div ref={endRef} />

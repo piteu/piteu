@@ -6,11 +6,12 @@ import { DEFAULT_SETTINGS } from './types';
 import Setup from './components/Setup';
 import Lock from './components/Lock';
 import Chat, { type ChatRequest } from './components/Chat';
-import { DAY } from './flows';
+import { type Answers, DAY } from './flows';
 import Journal from './components/Journal';
 import SettingsView from './components/SettingsView';
 import Insights from './components/Insights';
 import Memory, { type MemoryView } from './components/Memory';
+import Home, { type Go as HomeGo } from './components/Home';
 import { applyUpdate, newerVersionAvailable } from './update';
 
 type Phase = 'loading' | 'setup' | 'locked' | 'ready';
@@ -22,14 +23,14 @@ function readGo(): Go | null {
   if (g) history.replaceState(null, '', location.pathname); // don't repeat it on reload
   return g === 'evening' || g === 'yesterday' || g === 'week' || g === 'practice' ? g : null;
 }
-type Tab = 'today' | 'journal' | 'memory' | 'insights' | 'settings';
+type Tab = 'home' | 'journal' | 'memory' | 'insights' | 'settings';
 
 export default function App() {
   const [phase, setPhase] = useState<Phase>('loading');
   const [ring, setRing] = useState<Keyring | null>(null);
   const [key, setKey] = useState<CryptoKey | null>(null);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
-  const [tab, setTab] = useState<Tab>('today');
+  const [tab, setTab] = useState<Tab>('home');
   const [autoLock, setAutoLockState] = useState(DEFAULT_SETTINGS.autoLockMinutes);
   const [go, setGo] = useState<Go | null>(readGo);
   const [updateReady, setUpdateReady] = useState(false);
@@ -43,6 +44,17 @@ export default function App() {
     return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
   const [chatRequest, setChatRequest] = useState<ChatRequest | null>(null);
+  // Writing happens on its own full screen, separate from the main page.
+  const [writing, setWriting] = useState(false);
+  const startWriting = (flow: string, preset?: Answers, intro?: string) => {
+    setChatRequest({ flow, preset, intro, n: Date.now() });
+    setWriting(true);
+  };
+  const openFromHome = (where: HomeGo) => {
+    if (where === 'insights') return setTab('insights');
+    setMemoryOpen({ view: where === 'week' ? 'week' : 'calendar', n: Date.now() });
+    setTab('memory');
+  };
   const [memoryOpen, setMemoryOpen] = useState<{ view: MemoryView; n: number }>({ view: 'calendar', n: 0 });
 
   // A notification tapped while Bruna is already open.
@@ -59,11 +71,9 @@ export default function App() {
     if (phase !== 'ready' || !go) return;
     const n = Date.now();
     if (go === 'evening') {
-      setTab('today');
-      setChatRequest({ flow: 'evening', n });
+      startWriting('evening');
     } else if (go === 'yesterday') {
-      setTab('today');
-      setChatRequest({ flow: 'log', preset: { day: DAY.yesterday }, intro: 'Vamos preencher o dia de ontem.', n });
+      startWriting('log', { day: DAY.yesterday }, 'Vamos preencher o dia de ontem.');
     } else if (go === 'week') {
       setMemoryOpen({ view: 'week', n });
       setTab('memory');
@@ -99,7 +109,8 @@ export default function App() {
   const lock = useCallback(() => {
     setKey(null);
     setPhase('locked');
-    setTab('today');
+    setWriting(false);
+    setTab('home');
   }, []);
 
   // Auto-lock after being in the background (or idle) for a while.
@@ -152,21 +163,23 @@ export default function App() {
           </button>
         </div>
       )}
-      <main className="main">
-        {/* Chat stays mounted so a check-in in progress isn't lost when switching tabs. */}
-        <div hidden={tab !== 'today'} className="tabpane">
+      {writing && (
+        <main className="main writing">
           <Chat
             dataKey={key}
             settings={settings}
-            active={tab === 'today'}
             request={chatRequest}
-            onGo={(t) => {
-              if (t === 'insights') return setTab('insights');
-              setMemoryOpen({ view: t === 'week' ? 'week' : 'calendar', n: Date.now() });
-              setTab('memory');
+            onClose={() => {
+              setWriting(false);
+              setTab('home');
             }}
           />
-        </div>
+        </main>
+      )}
+      {!writing && (
+      <>
+      <main className="main">
+        {tab === 'home' && <Home dataKey={key} name={settings.name} onStart={startWriting} onGo={openFromHome} />}
         {tab === 'journal' && <Journal dataKey={key} />}
         {tab === 'memory' && <Memory key={memoryOpen.n} dataKey={key} initialView={memoryOpen.view} />}
         {tab === 'insights' && <Insights dataKey={key} />}
@@ -184,12 +197,14 @@ export default function App() {
         )}
       </main>
       <nav className="tabs" aria-label="Secções">
-        <TabButton active={tab === 'today'} onClick={() => setTab('today')} icon="💬" label="Hoje" />
+        <TabButton active={tab === 'home'} onClick={() => setTab('home')} icon="🏠" label="Início" />
         <TabButton active={tab === 'journal'} onClick={() => setTab('journal')} icon="📖" label="Diário" />
         <TabButton active={tab === 'memory'} onClick={() => setTab('memory')} icon="🧠" label="Memória" />
         <TabButton active={tab === 'insights'} onClick={() => setTab('insights')} icon="📈" label="Resumo" />
         <TabButton active={tab === 'settings'} onClick={() => setTab('settings')} icon="⚙️" label="Definições" />
       </nav>
+      </>
+      )}
     </div>
   );
 }
