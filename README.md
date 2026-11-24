@@ -24,6 +24,16 @@ The questions live in [`src/flows.ts`](src/flows.ts) and the follow-ups in [`src
   - *Practice*: picks a recent day and asks what you did. Tap what you remember, then see what you logged. Trying to recall before checking helps memories stick.
 - **Daily reminder** (Settings): adds a repeating event to your phone's calendar. No server, and nothing from your journal is in it.
 
+## Notifications
+Bruna can remind you: an evening check-in, "anything to add about yesterday?" in the morning, a Sunday look-back at your week, and memory practice (Tue/Thu/Sat). Tapping one opens Bruna at the right place.
+
+A web app can't schedule its own notifications, so a GitHub job ([`.github/workflows/notify.yml`](.github/workflows/notify.yml)) checks every hour and sends whichever reminder is due in your time zone. Set up once:
+1. In Bruna (opened from the home-screen icon): **Settings → Notifications**, choose times, tap **Turn on notifications**, then **Copy your code**.
+2. On GitHub: **Settings → Secrets and variables → Actions → New repository secret**, name `BRUNA_PUSH`, paste the code.
+3. Test: **Actions → Send notifications → Run workflow**.
+
+Notifications only contain fixed reminder text, never anything from your journal. The code contains this phone's push address and the key used to sign notifications, so keep it private (it's stored as an encrypted GitHub secret). If you change times in Bruna, update the secret with the new code. Reminders may arrive up to ~20 minutes after the hour. GitHub pauses scheduled jobs in repositories with no activity for 60 days; it emails a warning first, and one click on **Enable workflow** turns it back on.
+
 ## Insights
 The Insights tab shows how things change over a **week, month or year**, and you can step back to earlier periods:
 check-ins, days journaled, average mood compared with the previous period, current streak, a mood chart
@@ -44,9 +54,8 @@ Once deployed (below), open the site on your phone, then:
 Installing it matters on iPhone: Safari may clear data from websites you haven't visited in a while, but not from home-screen apps.
 
 ## Deploy (free, GitHub Pages)
-1. Merge this branch into `main`.
-2. In the repo: **Settings → Pages → Source: GitHub Actions**.
-3. The workflow in `.github/workflows/deploy.yml` builds and publishes on every push to `main`.
+1. In the repo: **Settings → Pages → Source: Deploy from a branch → `gh-pages` / (root)**.
+2. The workflow in `.github/workflows/deploy.yml` tests and builds the app on every push to `main` and puts the result on the `gh-pages` branch.
 
 The address follows the repository name (`…github.io/piteu`). To get `…github.io/bruna` instead, rename the repository on GitHub (Settings → General → Repository name) before installing it on your phone.
 

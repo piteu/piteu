@@ -1,6 +1,6 @@
 // Minimal offline cache. Pages: network first (so updates arrive), falling back
 // to cache. Built assets have hashed names, so they're cached forever.
-const CACHE = 'bruna-v1';
+const CACHE = 'bruna-v2';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest', './icon.svg'])));
@@ -40,5 +40,44 @@ self.addEventListener('fetch', (e) => {
           return res;
         }),
     ),
+  );
+});
+
+// ---------- Notifications ----------
+// Sent by the "Send notifications" GitHub job. They only carry fixed reminder text.
+
+self.addEventListener('push', (e) => {
+  let data = {};
+  try {
+    data = e.data ? e.data.json() : {};
+  } catch {
+    data = { body: e.data && e.data.text() };
+  }
+  const title = data.title || 'Bruna';
+  e.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || 'What did you do today? 📝',
+      icon: './icon-192.png',
+      badge: './icon-192.png',
+      tag: data.kind || 'bruna',
+      data: { url: data.url || './' },
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || './', self.registration.scope).href;
+  const go = new URL(url).searchParams.get('go');
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      const open = list.find((c) => c.url.startsWith(self.registration.scope));
+      if (open) {
+        // Bruna is already open: bring it to the front and tell it where to go.
+        if (go) open.postMessage({ type: 'go', go });
+        return open.focus();
+      }
+      return self.clients.openWindow(url);
+    }),
   );
 });

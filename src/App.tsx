@@ -5,13 +5,21 @@ import type { Settings } from './types';
 import { DEFAULT_SETTINGS } from './types';
 import Setup from './components/Setup';
 import Lock from './components/Lock';
-import Chat from './components/Chat';
+import Chat, { type ChatRequest } from './components/Chat';
 import Journal from './components/Journal';
 import SettingsView from './components/SettingsView';
 import Insights from './components/Insights';
 import Memory from './components/Memory';
 
 type Phase = 'loading' | 'setup' | 'locked' | 'ready';
+/** Where a tapped notification wants to go (see public/sw.js and scripts/notify). */
+type Go = 'evening' | 'yesterday' | 'week' | 'practice';
+
+function readGo(): Go | null {
+  const g = new URLSearchParams(location.search).get('go');
+  if (g) history.replaceState(null, '', location.pathname); // don't repeat it on reload
+  return g === 'evening' || g === 'yesterday' || g === 'week' || g === 'practice' ? g : null;
+}
 type Tab = 'today' | 'journal' | 'memory' | 'insights' | 'settings';
 
 export default function App() {
@@ -21,6 +29,37 @@ export default function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [tab, setTab] = useState<Tab>('today');
   const [autoLock, setAutoLockState] = useState(DEFAULT_SETTINGS.autoLockMinutes);
+  const [go, setGo] = useState<Go | null>(readGo);
+  const [chatRequest, setChatRequest] = useState<ChatRequest | null>(null);
+  const [memoryOpen, setMemoryOpen] = useState<{ view: 'calendar' | 'practice'; n: number }>({ view: 'calendar', n: 0 });
+
+  // A notification tapped while Bruna is already open.
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      if (e.data?.type === 'go') setGo(e.data.go);
+    };
+    navigator.serviceWorker?.addEventListener('message', onMsg);
+    return () => navigator.serviceWorker?.removeEventListener('message', onMsg);
+  }, []);
+
+  // Act on it once unlocked.
+  useEffect(() => {
+    if (phase !== 'ready' || !go) return;
+    const n = Date.now();
+    if (go === 'evening') {
+      setTab('today');
+      setChatRequest({ flow: 'evening', n });
+    } else if (go === 'yesterday') {
+      setTab('today');
+      setChatRequest({ flow: 'log', preset: { day: 'Yesterday' }, intro: 'Let’s fill in yesterday.', n });
+    } else if (go === 'week') {
+      setTab('insights');
+    } else if (go === 'practice') {
+      setMemoryOpen({ view: 'practice', n });
+      setTab('memory');
+    }
+    setGo(null);
+  }, [phase, go]);
 
   const load = useCallback(async () => {
     const r = (await getKeyring()) ?? null;
@@ -95,10 +134,10 @@ export default function App() {
       <main className="main">
         {/* Chat stays mounted so a check-in in progress isn't lost when switching tabs. */}
         <div hidden={tab !== 'today'} className="tabpane">
-          <Chat dataKey={key} settings={settings} active={tab === 'today'} />
+          <Chat dataKey={key} settings={settings} active={tab === 'today'} request={chatRequest} />
         </div>
         {tab === 'journal' && <Journal dataKey={key} />}
-        {tab === 'memory' && <Memory dataKey={key} />}
+        {tab === 'memory' && <Memory key={memoryOpen.n} dataKey={key} initialView={memoryOpen.view} />}
         {tab === 'insights' && <Insights dataKey={key} />}
         {tab === 'settings' && (
           <SettingsView

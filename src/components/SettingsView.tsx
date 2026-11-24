@@ -3,6 +3,7 @@ import { type Keyring, makeKeyring, openKeyring } from '../crypto';
 import { type Backup, listEntries, makeBackup, restoreBackup, setAutoLock, setKeyring, wipeAll } from '../db';
 import { dayKey, download, reminderIcs, toMarkdown } from '../export';
 import type { Settings } from '../types';
+import Notifications from './Notifications';
 
 interface Props {
   dataKey: CryptoKey;
@@ -47,6 +48,8 @@ export default function SettingsView(p: Props) {
           <span>After a very short answer, gently ask for a little more (once per check-in)</span>
         </label>
       </section>
+
+      <Notifications settings={p.settings} onSettings={p.onSettings} />
 
       <Reminder setNote={setNote} />
 
@@ -328,10 +331,10 @@ function Reminder({ setNote }: { setNote: (s: string) => void }) {
   const [time, setTime] = useState('21:00');
   return (
     <section className="card">
-      <h2>Daily reminder</h2>
+      <h2>Calendar reminder</h2>
       <p className="small">
-        Remembering to log is half the battle. This adds a daily reminder to your phone’s calendar — it opens a file your
-        phone asks to add to Calendar.
+        An alternative to notifications: a daily reminder in your phone’s calendar. It opens a file your phone asks to add
+        to Calendar.
       </p>
       <label className="field">
         <span>Remind me every day at</span>

@@ -15,8 +15,28 @@ function greeting(name?: string) {
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
 const msg = (from: Message['from'], text: string): Message => ({ from, text, at: Date.now() });
 
-export default function Chat({ dataKey, settings, active }: { dataKey: CryptoKey; settings: Settings; active: boolean }) {
+/** Ask the chat to start a check-in, e.g. from a tapped notification. `n` makes each request unique. */
+export interface ChatRequest {
+  flow: string;
+  preset?: Answers;
+  intro?: string;
+  n: number;
+}
+
+export default function Chat({
+  dataKey,
+  settings,
+  active,
+  request,
+}: {
+  dataKey: CryptoKey;
+  settings: Settings;
+  active: boolean;
+  request?: ChatRequest | null;
+}) {
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const handled = useRef(0);
   const opts = { name: settings.name, nudges: settings.nudges, known: known(entries) };
   const [msgs, setMsgs] = useState<Message[]>(() => [msg('app', greeting(settings.name))]);
   const [session, setSession] = useState<Session | null>(null);
@@ -37,8 +57,21 @@ export default function Chat({ dataKey, settings, active }: { dataKey: CryptoKey
 
   // Refresh what we know from past entries whenever this tab is shown.
   useEffect(() => {
-    if (active) listEntries(dataKey).then(setEntries).catch(() => {});
+    if (active)
+      listEntries(dataKey)
+        .then(setEntries)
+        .catch(() => {})
+        .finally(() => setLoaded(true));
   }, [active, dataKey]);
+
+  // Start a requested check-in once past entries are loaded (so your people and activities are there),
+  // unless one is already in progress.
+  useEffect(() => {
+    if (!request || !loaded || handled.current === request.n) return;
+    handled.current = request.n;
+    if (session && !session.done) return;
+    begin(request.flow, undefined, request.preset, request.intro);
+  }, [request, loaded]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });

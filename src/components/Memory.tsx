@@ -14,9 +14,9 @@ const shortDate = (ts: number) =>
   new Date(ts).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
 const avgMood = (ms: number[]) => (ms.length ? Math.round(ms.reduce((a, b) => a + b, 0) / ms.length) : 0);
 
-export default function Memory({ dataKey }: { dataKey: CryptoKey }) {
+export default function Memory({ dataKey, initialView = 'calendar' }: { dataKey: CryptoKey; initialView?: View }) {
   const [entries, setEntries] = useState<Entry[] | null>(null);
-  const [view, setView] = useState<View>('calendar');
+  const [view, setView] = useState<View>(initialView);
   const [openDay, setOpenDay] = useState<number | null>(null);
 
   useEffect(() => {

@@ -1,0 +1,40 @@
+name: Send notifications
+
+# Checks every hour (at :07, away from GitHub's busiest minute) whether a Bruna reminder is due
+# in your time zone, and sends it. Set up in Bruna → Settings → Notifications.
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+    inputs:
+      test:
+        description: 'Send a test notification now'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notify
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: scripts/notify
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/notify
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: node send.mjs
+        env:
+          BRUNA_PUSH: ${{ secrets.BRUNA_PUSH }}
+          SEND_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.test }}

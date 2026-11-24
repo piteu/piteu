@@ -32,10 +32,14 @@ export interface Entry {
 /** The moment an entry is "about": usually when it was written, unless it was filled in later. */
 export const entryTime = (e: Pick<Entry, 'createdAt' | 'aboutAt'>) => e.aboutAt ?? e.createdAt;
 
+import type { PushSettings } from './notify';
+
 export interface Settings {
   name?: string;
   autoLockMinutes: number; // 0 = never
   nudges: boolean; // gently ask for "a bit more" after very short answers
+  /** Notification setup (kept encrypted with the rest of the settings). */
+  push?: PushSettings;
 }
 
 export const DEFAULT_SETTINGS: Settings = { autoLockMinutes: 5, nudges: true };
