@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  pages: write # to ask GitHub Pages to republish
 
 concurrency:
   group: publish
@@ -37,3 +38,13 @@ jobs:
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -q -m "Publish ${GITHUB_SHA::7}"
           git push -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+      # Pushes made by this job don't make GitHub Pages republish on their own,
+      # so ask for it explicitly. Without this the site keeps showing an old version.
+      - name: Ask GitHub Pages to publish the new version
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages/builds"
