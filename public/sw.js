@@ -1,6 +1,6 @@
 // Minimal offline cache. Pages: network first (so updates arrive), falling back
 // to cache. Built assets have hashed names, so they're cached forever.
-const CACHE = 'bruna-v5';
+const CACHE = 'bruna-v6';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest', './icon.svg'])));
@@ -16,9 +16,10 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  if (new URL(req.url).pathname.endsWith('/version.json')) return; // always ask the server
   if (req.mode === 'navigate') {
     e.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-store' }) // never a stale page from the browser's cache
         .then((res) => {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put('./index.html', copy));

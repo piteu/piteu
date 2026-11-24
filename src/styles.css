@@ -343,3 +343,10 @@ textarea.code { display: block; margin: 6px 0; font: 12px/1.3 ui-monospace, mono
 .home-week .hero-sub { color: var(--muted); opacity: 1; }
 .home-week .hero-arrow { color: var(--accent); }
 .memory .segmented { grid-template-columns: repeat(4, 1fr); }
+
+/* "New version" bar */
+.update-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-shrink: 0;
+  margin: max(8px, env(safe-area-inset-top)) 12px 0; padding: 8px 8px 8px 14px; border-radius: 14px;
+  background: var(--surface); border: 1.5px solid var(--accent); font-size: 0.9rem;
+}

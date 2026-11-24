@@ -11,7 +11,7 @@ createRoot(document.getElementById('root')!).render(
 
 // Offline support (only in the built app, not during development).
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(() => {}));
 }
 
 // Ask the browser not to clear our storage when space runs low.

@@ -11,6 +11,7 @@ import Journal from './components/Journal';
 import SettingsView from './components/SettingsView';
 import Insights from './components/Insights';
 import Memory, { type MemoryView } from './components/Memory';
+import { applyUpdate, newerVersionAvailable } from './update';
 
 type Phase = 'loading' | 'setup' | 'locked' | 'ready';
 /** Where a tapped notification wants to go (see public/sw.js and scripts/notify). */
@@ -31,6 +32,16 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('today');
   const [autoLock, setAutoLockState] = useState(DEFAULT_SETTINGS.autoLockMinutes);
   const [go, setGo] = useState<Go | null>(readGo);
+  const [updateReady, setUpdateReady] = useState(false);
+
+  // Look for a newer Bruna when the app opens and whenever it comes back to the front.
+  useEffect(() => {
+    const check = () => newerVersionAvailable().then((yes) => yes && setUpdateReady(true));
+    check();
+    const onVis = () => document.visibilityState === 'visible' && check();
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
   const [chatRequest, setChatRequest] = useState<ChatRequest | null>(null);
   const [memoryOpen, setMemoryOpen] = useState<{ view: MemoryView; n: number }>({ view: 'calendar', n: 0 });
 
@@ -133,6 +144,14 @@ export default function App() {
 
   return (
     <div className="app">
+      {updateReady && (
+        <div className="update-bar" role="status">
+          <span>Há uma versão nova da Bruna.</span>
+          <button className="primary small" onClick={applyUpdate}>
+            Atualizar
+          </button>
+        </div>
+      )}
       <main className="main">
         {/* Chat stays mounted so a check-in in progress isn't lost when switching tabs. */}
         <div hidden={tab !== 'today'} className="tabpane">
