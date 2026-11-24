@@ -46,12 +46,12 @@ export interface Flow {
   steps: Step[];
 }
 
-export const MOODS: { value: Mood; face: string; label: string; day: string }[] = [
-  { value: 1, face: '😣', label: 'Péssimo', day: 'péssimo' },
-  { value: 2, face: '😕', label: 'Em baixo', day: 'difícil' },
-  { value: 3, face: '😐', label: 'Mais ou menos', day: 'mais ou menos' },
-  { value: 4, face: '🙂', label: 'Bem', day: 'bom' },
-  { value: 5, face: '😄', label: 'Ótimo', day: 'ótimo' },
+export const MOODS: { value: Mood; face: string; label: string; day: string; week: string }[] = [
+  { value: 1, face: '😣', label: 'Péssimo', day: 'péssimo', week: 'péssima' },
+  { value: 2, face: '😕', label: 'Em baixo', day: 'difícil', week: 'difícil' },
+  { value: 3, face: '😐', label: 'Mais ou menos', day: 'mais ou menos', week: 'mais ou menos' },
+  { value: 4, face: '🙂', label: 'Bem', day: 'bom', week: 'boa' },
+  { value: 5, face: '😄', label: 'Ótimo', day: 'ótimo', week: 'ótima' },
 ];
 
 export const moodOf = (c: Ctx) => (c.answers.mood as Mood | undefined) ?? 3;

@@ -142,7 +142,7 @@ export function followupsFor(c: Ctx, max: number): Followup[] {
 
 // ---------- "Tell someone about my day" ----------
 
-const PHRASE: Record<string, string> = {
+export const PHRASE: Record<string, string> = {
   '💼 Trabalho': 'Trabalhei', '📚 Estudo': 'Estudei', '🏃 Exercício': 'Fiz exercício', '🚶 Caminhada': 'Fui dar uma caminhada',
   '🍳 Cozinhei': 'Cozinhei', '🍽️ Comi fora': 'Comi fora', '🛒 Compras': 'Fui às compras', '🧹 Tarefas de casa': 'Fiz tarefas de casa',
   '🧾 Recados': 'Tratei de recados', '👫 Estive com amigos': 'Estive com amigos', '👨‍👩‍👧 Família': 'Estive com a família',
@@ -159,9 +159,9 @@ export interface DayFacts {
   mood?: number;
 }
 
-const oneLine = (s: string) => s.trim().replace(/\s*\n+\s*/g, ' ');
-const joinNames = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} e ${xs[xs.length - 1]}`);
-const stripEmoji = (s: string) => s.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, '');
+export const oneLine = (s: string) => s.trim().replace(/\s*\n+\s*/g, ' ');
+export const joinNames = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} e ${xs[xs.length - 1]}`);
+export const stripEmoji = (s: string) => s.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, '');
 
 /** A few plain sentences about the day — something you can read out or send to someone. */
 export function daySummary(f: DayFacts): string {

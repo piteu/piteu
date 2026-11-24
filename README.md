@@ -23,6 +23,7 @@ The questions live in [`src/flows.ts`](src/flows.ts) and the follow-ups in [`src
 - **Memory tab**:
   - *Calendar*: tap any day to see what you did, who with, and what you wrote. *On this day* shows a week, a month and a year ago.
   - *When did I last…*: e.g. "Saw Rita: 12 days ago · 9 times · about every 5 days".
+  - *Semana*: a weekly recap — days logged, mood, what you did and who you saw, highlights, a line per day, and a shareable "tell someone about my week" text. Offered on the main page on Sundays and Mondays, and opened by the Sunday notification.
   - *Practice*: picks a recent day and asks what you did. Tap what you remember, then see what you logged. Trying to recall before checking helps memories stick.
 - **Daily reminder** (Settings): adds a repeating event to your phone's calendar. No server, and nothing from your journal is in it.
 

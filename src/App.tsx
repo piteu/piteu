@@ -10,7 +10,7 @@ import { DAY } from './flows';
 import Journal from './components/Journal';
 import SettingsView from './components/SettingsView';
 import Insights from './components/Insights';
-import Memory from './components/Memory';
+import Memory, { type MemoryView } from './components/Memory';
 
 type Phase = 'loading' | 'setup' | 'locked' | 'ready';
 /** Where a tapped notification wants to go (see public/sw.js and scripts/notify). */
@@ -32,7 +32,7 @@ export default function App() {
   const [autoLock, setAutoLockState] = useState(DEFAULT_SETTINGS.autoLockMinutes);
   const [go, setGo] = useState<Go | null>(readGo);
   const [chatRequest, setChatRequest] = useState<ChatRequest | null>(null);
-  const [memoryOpen, setMemoryOpen] = useState<{ view: 'calendar' | 'practice'; n: number }>({ view: 'calendar', n: 0 });
+  const [memoryOpen, setMemoryOpen] = useState<{ view: MemoryView; n: number }>({ view: 'calendar', n: 0 });
 
   // A notification tapped while Bruna is already open.
   useEffect(() => {
@@ -54,7 +54,8 @@ export default function App() {
       setTab('today');
       setChatRequest({ flow: 'log', preset: { day: DAY.yesterday }, intro: 'Vamos preencher o dia de ontem.', n });
     } else if (go === 'week') {
-      setTab('insights');
+      setMemoryOpen({ view: 'week', n });
+      setTab('memory');
     } else if (go === 'practice') {
       setMemoryOpen({ view: 'practice', n });
       setTab('memory');
@@ -141,8 +142,9 @@ export default function App() {
             active={tab === 'today'}
             request={chatRequest}
             onGo={(t) => {
-              if (t === 'memory') setMemoryOpen({ view: 'calendar', n: Date.now() });
-              setTab(t);
+              if (t === 'insights') return setTab('insights');
+              setMemoryOpen({ view: t === 'week' ? 'week' : 'calendar', n: Date.now() });
+              setTab('memory');
             }}
           />
         </div>

@@ -4,6 +4,7 @@ import { dayKey, moodFace } from '../export';
 import { currentStreak } from '../insights';
 import { LOCALE } from '../locale';
 import { onThisDay } from '../memory';
+import { weekRecap } from '../recap';
 import { type Entry, entryTime } from '../types';
 import type { Answers } from '../flows';
 
@@ -44,9 +45,12 @@ export default function Home({
   suggested: string;
   showYesterday: boolean;
   onStart: (id: string, preset?: Answers, intro?: string) => void;
-  onGo: (tab: 'memory' | 'insights') => void;
+  onGo: (tab: 'memory' | 'week' | 'insights') => void;
 }) {
   const now = Date.now();
+  // On Sundays and Mondays, offer the weekly recap if there's something in it.
+  const dow = new Date(now).getDay();
+  const weekReady = (dow === 0 || dow === 1) && weekRecap(entries, dow === 1 ? -1 : 0).daysLogged >= 2;
   const hero = flowById(suggested);
   const date = new Date().toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' });
 
@@ -106,6 +110,21 @@ export default function Home({
           <span aria-hidden>🕘</span>
           <span className="alert-text">Ainda não registaste ontem</span>
           <b>Preencher</b>
+        </button>
+      )}
+
+      {weekReady && (
+        <button className="home-week" onClick={() => onGo('week')}>
+          <span className="hero-icon" aria-hidden>
+            📅
+          </span>
+          <span className="hero-main">
+            <span className="hero-title">A tua semana está pronta</span>
+            <span className="hero-sub">O que fizeste, com quem estiveste, e um resumo para contares a alguém.</span>
+          </span>
+          <span className="hero-arrow" aria-hidden>
+            ›
+          </span>
         </button>
       )}
 

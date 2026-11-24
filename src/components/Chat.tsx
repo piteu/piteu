@@ -31,7 +31,7 @@ export default function Chat({
   settings: Settings;
   active: boolean;
   request?: ChatRequest | null;
-  onGo: (tab: 'memory' | 'insights') => void;
+  onGo: (tab: 'memory' | 'week' | 'insights') => void;
 }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loaded, setLoaded] = useState(false);

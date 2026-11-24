@@ -5,9 +5,10 @@ import { dayKey, formatTime, moodFace } from '../export';
 import { MOODS } from '../flows';
 import { type Day, type Quiz, type Thing, dayDetails, makeQuiz, onThisDay, relativeDay, scoreQuiz, things } from '../memory';
 import type { Entry } from '../types';
-import { daySummary } from '../details';
+import { daySummary, stripEmoji } from '../details';
+import { defaultWeekOffset, weekRecap, weekSummary } from '../recap';
 
-type View = 'calendar' | 'last' | 'practice';
+type View = 'calendar' | 'week' | 'last' | 'practice';
 
 const longDate = (ts: number) =>
   new Date(ts).toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' });
@@ -17,9 +18,12 @@ const shortDate = (ts: number) =>
 const onDay = (ts: number) => `${[0, 6].includes(new Date(ts).getDay()) ? 'no' : 'na'} ${longDate(ts)}`;
 const avgMood = (ms: number[]) => (ms.length ? Math.round(ms.reduce((a, b) => a + b, 0) / ms.length) : 0);
 
+export type MemoryView = View;
+
 export default function Memory({ dataKey, initialView = 'calendar' }: { dataKey: CryptoKey; initialView?: View }) {
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [view, setView] = useState<View>(initialView);
+  const [weekOffset, setWeekOffset] = useState(() => defaultWeekOffset()); // kept while you open days
   const [openDay, setOpenDay] = useState<number | null>(null);
 
   useEffect(() => {
@@ -39,7 +43,8 @@ export default function Memory({ dataKey, initialView = 'calendar' }: { dataKey:
         {(
           [
             ['calendar', 'Calendário'],
-            ['last', 'Última vez…'],
+            ['week', 'Semana'],
+            ['last', 'Última vez'],
             ['practice', 'Treino'],
           ] as [View, string][]
         ).map(([v, label]) => (
@@ -50,6 +55,7 @@ export default function Memory({ dataKey, initialView = 'calendar' }: { dataKey:
       </div>
 
       {view === 'calendar' && <CalendarView entries={entries} onOpen={setOpenDay} />}
+      {view === 'week' && <WeekView entries={entries} onOpen={setOpenDay} offset={weekOffset} setOffset={setWeekOffset} />}
       {view === 'last' && <LastTime entries={entries} onOpen={setOpenDay} />}
       {view === 'practice' && <Practice entries={entries} onOpen={setOpenDay} />}
     </div>
@@ -162,21 +168,22 @@ function ItemList({ items, day }: { items: string[]; day: Day }) {
 
 /** A few plain lines about the day, to read out, copy or send to someone. */
 function TellSomeone({ day }: { day: Day }) {
-  const [done, setDone] = useState('');
   const mood = avgMood(day.moods);
   const text = daySummary({ ts: day.ts, activities: day.activities, people: day.people, details: day.details, mood: mood || undefined });
-  if (!text) return null;
+  return text ? <ShareCard title="Contar a alguém sobre este dia" text={text} /> : null;
+}
+
+/** Shows a text with Share and Copy buttons. Nothing is sent unless you tap one. */
+function ShareCard({ title, text }: { title: string; text: string }) {
+  const [done, setDone] = useState('');
   const canShare = typeof navigator.share === 'function';
   return (
     <section className="card tell">
-      <h2>Contar a alguém sobre este dia</h2>
+      <h2>{title}</h2>
       <p className="tell-text">{text}</p>
       <div className="row">
         {canShare && (
-          <button
-            className="primary small"
-            onClick={() => navigator.share({ text }).catch(() => {})}
-          >
+          <button className="primary small" onClick={() => navigator.share({ text }).catch(() => {})}>
             Partilhar…
           </button>
         )}
@@ -197,6 +204,154 @@ function TellSomeone({ day }: { day: Day }) {
       {done && <p className="muted small">{done}</p>}
       <p className="muted small">Só é partilhado se quiseres — nada é enviado automaticamente.</p>
     </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+function WeekView({
+  entries,
+  onOpen,
+  offset,
+  setOffset,
+}: {
+  entries: Entry[];
+  onOpen: (ts: number) => void;
+  offset: number;
+  setOffset: (f: (o: number) => number) => void;
+}) {
+  const r = useMemo(() => weekRecap(entries, offset), [entries, offset]);
+  const summary = weekSummary(r);
+  const mood = r.avgMood !== undefined ? MOODS[Math.min(4, Math.max(0, Math.round(r.avgMood) - 1))] : undefined;
+  const todayKey = dayKey(Date.now());
+
+  return (
+    <>
+      <div className="periodnav">
+        <button className="link" onClick={() => setOffset((o) => o - 1)} aria-label="Semana anterior">
+          ‹
+        </button>
+        <span className="week-title">
+          {r.label}
+          <span className="muted small">{offset === 0 ? 'Esta semana' : offset === -1 ? 'Semana passada' : relativeDay(r.start)}</span>
+        </span>
+        <button className="link" onClick={() => setOffset((o) => o + 1)} disabled={offset >= 0} aria-label="Semana seguinte">
+          ›
+        </button>
+      </div>
+
+      {!r.daysLogged ? (
+        <p className="muted empty">Nada registado nesta semana.</p>
+      ) : (
+        <>
+          <div className="home-stats week-stats">
+            <span className="stat">
+              📅 <b>{r.daysLogged}</b> de 7 dias
+            </span>
+            {mood && (
+              <span className="stat">
+                {mood.face} humor {mood.label.toLowerCase()}
+              </span>
+            )}
+            {r.bestDay && (
+              <span className="stat">
+                ⭐ Melhor dia: {new Date(r.bestDay.ts).toLocaleDateString(LOCALE, { weekday: 'long' })}
+              </span>
+            )}
+          </div>
+
+          <div className="week-dots week-days" role="group" aria-label="Dias da semana">
+            {r.days.map((d) => {
+              const m = avgMood(d.moods);
+              const future = d.ts > Date.now() && dayKey(d.ts) !== todayKey;
+              return (
+                <button
+                  key={d.ts}
+                  className="wd"
+                  disabled={future}
+                  onClick={() => onOpen(d.ts)}
+                  aria-label={`${longDate(d.ts)}${m ? `, humor ${MOODS[m - 1].label.toLowerCase()}` : ''}`}
+                >
+                  <span className={`dot m${m} ${d.entries.length ? 'has' : ''}`}>{m ? moodFace(m) : ''}</span>
+                  <span className="dow">{new Date(d.ts).toLocaleDateString(LOCALE, { weekday: 'narrow' })}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {r.activities.length > 0 && (
+            <section>
+              <h2>O que fizeste</h2>
+              <div className="tags">
+                {r.activities.map((a) => (
+                  <span key={a.name} className="tag">
+                    {a.name}
+                    {a.n > 1 && <b className="tag-n"> ×{a.n}</b>}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {r.people.length > 0 && (
+            <section>
+              <h2>Com quem estiveste</h2>
+              <div className="tags">
+                {r.people.map((p) => (
+                  <span key={p.name} className="tag">
+                    👤 {p.name}
+                    {p.n > 1 && <b className="tag-n"> ×{p.n}</b>}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {r.highlights.length > 0 && (
+            <section>
+              <h2>Destaques</h2>
+              {r.highlights.map((h, i) => (
+                <button key={i} className="highlight" onClick={() => onOpen(h.day.ts)}>
+                  <span className="muted small">
+                    {shortDate(h.day.ts)}
+                    {h.item ? ` · ${h.item}` : ''}
+                  </span>
+                  <span className="note-quote">{h.text}</span>
+                </button>
+              ))}
+            </section>
+          )}
+
+          {summary && <ShareCard title="Contar a alguém sobre a minha semana" text={summary} />}
+
+          <section>
+            <h2>Dia a dia</h2>
+            <ul className="daylist">
+              {r.days
+                .filter((d) => d.entries.length)
+                .map((d) => {
+                  const m = avgMood(d.moods);
+                  const what = [...d.activities.map(stripEmoji), ...(d.people.length ? [`com ${d.people.join(', ')}`] : [])].join(' · ');
+                  return (
+                    <li key={d.ts}>
+                      <button className="day-row" onClick={() => onOpen(d.ts)}>
+                        <span className="day-name">{shortDate(d.ts)}</span>
+                        <span className="day-what">
+                          {m ? `${moodFace(m)} ` : ''}
+                          {what || d.notes[0] || 'Check-in'}
+                        </span>
+                        <span className="hero-arrow" aria-hidden>
+                          ›
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+            </ul>
+          </section>
+        </>
+      )}
+    </>
   );
 }
 
