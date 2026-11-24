@@ -38,6 +38,9 @@ export type Step =
 export interface Flow {
   id: string;
   title: string;
+  /** Name on the small tiles of the main page. */
+  short: string;
+  icon: string;
   blurb: string;
   minutes: number;
   steps: Step[];
@@ -120,7 +123,9 @@ const feelingsFor = (c: Ctx) => (low(c) ? LOW_FEELINGS : high(c) ? HIGH_FEELINGS
 
 const quick: Flow = {
   id: 'quick',
+  short: 'Rápido',
   title: 'Check-in rápido',
+  icon: '⚡',
   blurb: 'Quase só tocar. Bom para qualquer altura.',
   minutes: 1,
   steps: [
@@ -190,7 +195,9 @@ const quick: Flow = {
 
 const evening: Flow = {
   id: 'evening',
+  short: 'Fim do dia',
   title: 'Fim do dia',
+  icon: '🌙',
   blurb: 'Fecha o dia com algumas perguntas curtas.',
   minutes: 3,
   steps: [
@@ -239,7 +246,9 @@ const evening: Flow = {
 
 const mind: Flow = {
   id: 'mind',
+  short: 'Na cabeça',
   title: 'Tenho uma coisa na cabeça',
+  icon: '💭',
   blurb: 'Desenrolar uma preocupação ou algo que te chateou.',
   minutes: 4,
   steps: [
@@ -296,7 +305,9 @@ const mind: Flow = {
 
 const gratitude: Flow = {
   id: 'gratitude',
+  short: '3 coisas boas',
   title: 'Três coisas boas',
+  icon: '🌱',
   blurb: 'Três coisas rápidas que te deixaram contente.',
   minutes: 1,
   steps: [
@@ -339,7 +350,9 @@ export function promptOfTheDay(d = new Date()): string {
 
 const free: Flow = {
   id: 'free',
+  short: 'Escrever',
   title: 'Só escrever',
+  icon: '✍️',
   blurb: 'Escreve o que quiseres, com uma pergunta se te apetecer.',
   minutes: 2,
   steps: [
@@ -361,7 +374,9 @@ const free: Flow = {
 
 const log: Flow = {
   id: 'log',
+  short: 'O que fiz',
   title: 'O que fiz',
+  icon: '📝',
   blurb: 'Toca no que fizeste e com quem estiveste, para poderes consultar mais tarde.',
   minutes: 1,
   steps: [

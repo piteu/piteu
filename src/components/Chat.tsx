@@ -1,16 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { type AnswerValue, type Session, answer, displayAnswer, skipFollowups, start } from '../engine';
 import { daySummary } from '../details';
-import { type Answers, DAY, FLOWS, MOODS, NO_ONE, flowById, suggestedFlowId } from '../flows';
+import { type Answers, DAY, MOODS, NO_ONE, flowById, suggestedFlowId } from '../flows';
 import { listEntries, saveEntry } from '../db';
 import { known, yesterdayMissing } from '../memory';
+import Home, { FlowGrid } from './Home';
 import type { Entry, Message, Mood, Settings } from '../types';
 
-function greeting(name?: string) {
-  const h = new Date().getHours();
-  const part = h < 5 ? 'Olá' : h < 12 ? 'Bom dia' : h < 20 ? 'Boa tarde' : 'Boa noite';
-  return `${part}${name ? `, ${name}` : ''}. O que te apetece fazer?`;
-}
 
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
 const END_PROMPT = 'Mais alguma coisa? Podes começar outro abaixo, ou voltar quando quiseres.';
@@ -29,17 +25,19 @@ export default function Chat({
   settings,
   active,
   request,
+  onGo,
 }: {
   dataKey: CryptoKey;
   settings: Settings;
   active: boolean;
   request?: ChatRequest | null;
+  onGo: (tab: 'memory' | 'insights') => void;
 }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loaded, setLoaded] = useState(false);
   const handled = useRef(0);
   const opts = { name: settings.name, nudges: settings.nudges, known: known(entries) };
-  const [msgs, setMsgs] = useState<Message[]>(() => [msg('app', greeting(settings.name))]);
+  const [msgs, setMsgs] = useState<Message[]>([]);
   const [session, setSession] = useState<Session | null>(null);
   const [entryMeta, setEntryMeta] = useState<{ id: string; createdAt: number; from: number } | null>(null);
   const [text, setText] = useState('');
@@ -50,6 +48,7 @@ export default function Chat({
   const [adding, setAdding] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chipsRef = useRef<HTMLDivElement>(null);
 
@@ -74,9 +73,12 @@ export default function Chat({
     begin(request.flow, undefined, request.preset, request.intro);
   }, [request, loaded]);
 
+  // In a conversation, follow the latest message; on the main page, stay at the top.
+  const showingHome = (!session || session.done) && msgs.length === 0;
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [msgs, current]);
+    if (showingHome) logRef.current?.scrollTo({ top: 0 });
+    else endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [msgs, current, showingHome]);
 
   // Grow the text box with its content.
   useLayoutEffect(() => {
@@ -244,39 +246,34 @@ export default function Chat({
 
   const suggested = suggestedFlowId();
   const showYesterday = entries.length > 0 && yesterdayMissing(entries);
-  const flowsOrdered = [...FLOWS].sort((a, b) => (a.id === suggested ? -1 : b.id === suggested ? 1 : 0));
+  const onHome = idle && msgs.length === 0;
 
   return (
     <div className="chat">
-      <div className="messages" role="log" aria-live="polite">
+      <div className="messages" role="log" aria-live="polite" ref={logRef}>
         {msgs.map((m, i) => (
           <div key={i} className={`bubble from-${m.from}`}>
             {m.text}
           </div>
         ))}
 
-        {idle && (
-          <div className="flows">
-            {showYesterday && (
-              <button
-                className="flow-card highlight"
-                onClick={() => begin('log', undefined, { day: DAY.yesterday }, 'Vamos preencher o dia de ontem.')}
-              >
-                <span className="flow-title">Preencher ontem</span>
-                <span className="flow-blurb">Ainda não registaste o que fizeste ontem. São só uns toques.</span>
-              </button>
-            )}
-            {flowsOrdered.map((f) => (
-              <button key={f.id} className="flow-card" onClick={() => begin(f.id)}>
-                <span className="flow-title">
-                  {f.title}
-                  {f.id === suggested && <span className="badge">Sugerido</span>}
-                </span>
-                <span className="flow-blurb">
-                  {f.blurb} · ~{f.minutes} min
-                </span>
-              </button>
-            ))}
+        {onHome && (
+          <Home
+            name={settings.name}
+            entries={entries}
+            suggested={suggested}
+            showYesterday={showYesterday}
+            onStart={(id, preset, intro) => begin(id, undefined, preset, intro)}
+            onGo={onGo}
+          />
+        )}
+
+        {idle && !onHome && (
+          <div className="after">
+            <FlowGrid onStart={(id) => begin(id)} />
+            <button className="link small back-home" onClick={() => setMsgs([])}>
+              ← Voltar ao início
+            </button>
           </div>
         )}
         <div ref={endRef} />

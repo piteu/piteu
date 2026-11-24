@@ -135,7 +135,16 @@ export default function App() {
       <main className="main">
         {/* Chat stays mounted so a check-in in progress isn't lost when switching tabs. */}
         <div hidden={tab !== 'today'} className="tabpane">
-          <Chat dataKey={key} settings={settings} active={tab === 'today'} request={chatRequest} />
+          <Chat
+            dataKey={key}
+            settings={settings}
+            active={tab === 'today'}
+            request={chatRequest}
+            onGo={(t) => {
+              if (t === 'memory') setMemoryOpen({ view: 'calendar', n: Date.now() });
+              setTab(t);
+            }}
+          />
         </div>
         {tab === 'journal' && <Journal dataKey={key} />}
         {tab === 'memory' && <Memory key={memoryOpen.n} dataKey={key} initialView={memoryOpen.view} />}
